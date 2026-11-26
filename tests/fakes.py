@@ -43,3 +43,21 @@ class FakeClient:
             raise RuntimeError(f"{tool} mati")
         r = self.responses.get(tool, {"ok": 1})
         return r(args) if callable(r) else r
+
+
+class FakeOpenAI:
+    """Meniru openai.AsyncOpenAI: mengembalikan teks dari daftar `replies` berurutan."""
+
+    def __init__(self, replies: list[str]):
+        self.replies = list(replies)
+        self.requests: list[dict] = []
+        outer = self
+
+        class _Completions:
+            async def create(self, **kw):
+                outer.requests.append(kw)
+                text = outer.replies.pop(0)
+                msg = type("M", (), {"content": text})()
+                return type("R", (), {"choices": [type("C", (), {"message": msg})()]})()
+
+        self.chat = type("Chat", (), {"completions": _Completions()})()
