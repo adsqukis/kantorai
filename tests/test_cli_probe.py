@@ -17,3 +17,15 @@ def test_probe_missing_token_reports_clearly(settings_fixture, monkeypatch, caps
     code = cli.main(["probe", "--server", "taqis"], transport=FakeTransport())
     assert code == 1
     assert "TAQIS_TOKEN" in capsys.readouterr().out
+
+
+def test_probe_try_runs_source_calls(settings_fixture, monkeypatch, capsys):
+    from tests.fakes import FakeTransport
+    monkeypatch.setenv("CMS_TIKTOK_TOKEN", "x")
+    monkeypatch.setattr(cli, "get_settings", lambda: settings_fixture)
+    t = FakeTransport()
+    code = cli.main(["probe", "--try", "tiktok"], transport=t)
+    out = capsys.readouterr().out
+    assert code == 0
+    assert {c.tool for c in t.calls} >= {"get_overview", "get_live_sessions"}
+    assert "overview" in out and "OK" in out
