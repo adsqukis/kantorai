@@ -22,6 +22,8 @@ import {
   parseAgentIdFromSessionKey,
 } from "@/lib/gateway/GatewayClient";
 import { useRuntimeConnection } from "@/lib/runtime/useRuntimeConnection";
+import { useKantorStatusFeed } from "@/lib/kantor/useKantorStatusFeed";
+import { applyKantorStatus, isKantorRuntimeAdapter } from "@/lib/kantor/statusFeed";
 import {
   createStudioSettingsCoordinator,
   type StudioSettingsLoadOptions,
@@ -951,6 +953,10 @@ export function OfficeScreen({
     supportsCapability,
   } =
     useRuntimeConnection(settingsCoordinator);
+  // kantorai: status kerja/santai dari runtime laporan pagi.
+  const kantorStatus = useKantorStatusFeed(
+    isKantorRuntimeAdapter(activeAdapterType) ? gatewayUrl.trim() || null : null,
+  );
   const runtimeSupportsSkills = supportsCapability("skills");
   const runtimeSupportsApprovals = supportsCapability("approvals");
   const runtimeSupportsCron = supportsCapability("cron");
@@ -979,6 +985,7 @@ export function OfficeScreen({
         phoneBoothHeld: boolean;
         qaHeld: boolean;
         smsBoothHeld: boolean;
+        kantorStatus?: string; // kantorai
       }
     >
   >(new Map());
@@ -4187,6 +4194,7 @@ export function OfficeScreen({
         phoneBoothHeld: boolean;
         qaHeld: boolean;
         smsBoothHeld: boolean;
+        kantorStatus?: string;
       }
     >();
     const nextOfficeAgents = state.agents.map((agent) => {
@@ -4205,7 +4213,8 @@ export function OfficeScreen({
         cached.gymHeld === gymHeld &&
         cached.phoneBoothHeld === phoneBoothHeld &&
         cached.qaHeld === qaHeld &&
-        cached.smsBoothHeld === smsBoothHeld
+        cached.smsBoothHeld === smsBoothHeld &&
+        cached.kantorStatus === kantorStatus[agent.agentId] // kantorai
       ) {
         nextCache.set(agent.agentId, cached);
         return cached.officeAgent;
@@ -4235,8 +4244,14 @@ export function OfficeScreen({
                       : `desk-hold-${agent.agentId}`),
               }
             : agent;
-      const officeAgent = mapAgentToOffice(effectiveAgent);
+      const mappedAgent = mapAgentToOffice(effectiveAgent);
+      // kantorai: status dari runtime laporan pagi.
+      const officeAgent: OfficeAgent = {
+        ...mappedAgent,
+        status: applyKantorStatus(mappedAgent.status, agent.agentId, kantorStatus),
+      };
       nextCache.set(agent.agentId, {
+        kantorStatus: kantorStatus[agent.agentId],
         agent,
         deskHeld,
         gymHeld,
@@ -4254,6 +4269,7 @@ export function OfficeScreen({
     clockTick,
     deskHoldByAgentId,
     gymHoldByAgentId,
+    kantorStatus,
     phoneBoothHoldByAgentId,
     qaHoldByAgentId,
     smsBoothHoldByAgentId,
