@@ -1,3 +1,4 @@
+import { KANTOR_FOOTPRINT } from "@/features/retro-office/core/kantorFurniture";
 import {
   CANVAS_H,
   CANVAS_W,
@@ -35,6 +36,7 @@ export const resolveItemTypeKey = (item: FurnitureItem) =>
   item.type === "couch" && item.vertical ? "couch_v" : item.type;
 
 export const ITEM_FOOTPRINT: Record<string, [number, number]> = {
+  ...KANTOR_FOOTPRINT, // kantorai
   wall: [80, WALL_THICKNESS],
   door: [DOOR_LENGTH, DOOR_THICKNESS],
   desk_cubicle: [100, 55],
@@ -117,6 +119,8 @@ export const ITEM_METADATA: Record<string, { blocksNavigation: boolean; navPaddi
   couch:           { blocksNavigation: true  },
   couch_v:         { blocksNavigation: true  },
   beanbag:         { blocksNavigation: true  }, // large floor seat (issue #4)
+  tv:              { blocksNavigation: true  }, // kantorai: TV pojok santai
+  bed:             { blocksNavigation: false }, // kantorai: agent berbaring di atasnya
   // ── desks / workstations ──────────────────────────────────────────────────
   desk_cubicle:    { blocksNavigation: true, navPadding: 0 }, // blocks nav with zero padding (tight to desk body)
   executive_desk:  { blocksNavigation: true  },

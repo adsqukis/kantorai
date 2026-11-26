@@ -158,6 +158,8 @@ import type { NavGrid } from "@/features/retro-office/core/navigation";
 import type { OfficeLayoutSnapshot } from "@/lib/office/layoutSnapshot";
 import { AgentModel as AgentObjectModel } from "@/features/retro-office/objects/agents";
 import { JukeboxModel as InteractiveJukeboxModel } from "@/features/retro-office/objects/Jukebox";
+import { BedModel, TvModel } from "@/features/retro-office/objects/Leisure"; // kantorai
+import { KANTOR_PALETTE_ENTRIES } from "@/features/retro-office/core/kantorFurniture"; // kantorai
 import {
   FurnitureModel as GenericFurnitureModel,
   InstancedFurnitureItems as InstancedFurnitureItemsModel,
@@ -414,6 +416,7 @@ const PALETTE: PaletteEntry[] = [
   },
   { type: "computer", label: "Computer", icon: "🖥️", defaults: {} },
   { type: "lamp", label: "Lamp", icon: "💡", defaults: {} },
+  ...KANTOR_PALETTE_ENTRIES, // kantorai: TV & kasur
 ];
 
 // ============================================================
@@ -5411,6 +5414,31 @@ export function RetroOffice3D({
                   />
                 ) : item.type === "atm" ? (
                   <InteractiveAtmMachineModel
+                    key={item._uid}
+                    item={item}
+                    isSelected={item._uid === selectedUid}
+                    isHovered={item._uid === hoverUid}
+                    editMode={editMode}
+                    onPointerDown={handleFurniturePointerDown}
+                    onPointerOver={handleFurniturePointerOver}
+                    onPointerOut={handleFurniturePointerOut}
+                    onClick={handleDeskClick}
+                  />
+                ) : item.type === "tv" ? (
+                  // kantorai: furnitur pojok santai
+                  <TvModel
+                    key={item._uid}
+                    item={item}
+                    isSelected={item._uid === selectedUid}
+                    isHovered={item._uid === hoverUid}
+                    editMode={editMode}
+                    onPointerDown={handleFurniturePointerDown}
+                    onPointerOver={handleFurniturePointerOver}
+                    onPointerOut={handleFurniturePointerOut}
+                    onClick={handleDeskClick}
+                  />
+                ) : item.type === "bed" ? (
+                  <BedModel
                     key={item._uid}
                     item={item}
                     isSelected={item._uid === selectedUid}
