@@ -61,3 +61,18 @@ class FakeOpenAI:
                 return type("R", (), {"choices": [type("C", (), {"message": msg})()]})()
 
         self.chat = type("Chat", (), {"completions": _Completions()})()
+
+
+class FakeLLM:
+    """Meniru LLM.complete: mengembalikan objek dari `outputs` berurutan (atau raise bila Exception)."""
+
+    def __init__(self, outputs: list):
+        self.outputs = list(outputs)
+        self.calls: list[dict] = []
+
+    async def complete(self, system: str, user: str, schema):
+        self.calls.append({"system": system, "user": user, "schema": schema})
+        out = self.outputs.pop(0)
+        if isinstance(out, Exception):
+            raise out
+        return out
