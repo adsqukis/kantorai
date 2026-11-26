@@ -21,7 +21,7 @@ PERSONA = {
     "keuangan": "Pelapor Keuangan: membaca qks.smartup.id (net revenue, margin, produk teratas).",
     "analis": "Analis: menyambungkan konten dengan penjualan per brand dan memberi saran.",
 }
-NO_REPORT = "Belum ada laporan hari ini. Laporan dibuat otomatis jam 06.30 WIB, nanti saya bisa jelaskan isinya."
+NO_REPORT = "Belum ada laporan hari ini. Laporan dibuat otomatis jam 08.00 WIB, nanti saya bisa jelaskan isinya."
 
 
 class ChatBody(BaseModel):

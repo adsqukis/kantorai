@@ -73,6 +73,9 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     pr.add_argument("--try", dest="try_source", metavar="SOURCE_ID")
     rn = sub.add_parser("run", help="jalankan laporan pagi")
     rn.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
+    rn.add_argument("--rekaman", help="file JSON hasil panggilan yang sudah direkam (uji coba tanpa token)")
+    rc = sub.add_parser("rencana", help="cetak daftar panggilan MCP untuk satu tanggal (JSON)")
+    rc.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
     sv = sub.add_parser("serve", help="jalankan dashboard web")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8080)
@@ -89,10 +92,18 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
         return asyncio.run(_probe(settings, args.server, transport))
     if args.cmd == "run":
         run_date = date.fromisoformat(args.date) if args.date else today_wib()
+        if args.rekaman:
+            from .snapshot import SnapshotTransport
+            transport = SnapshotTransport(args.rekaman, load_servers(settings))
         return asyncio.run(_run(settings, run_date, transport, llm))
     if args.cmd == "serve":
         from .web.app import create_app
         uvicorn_run(create_app(settings), host=args.host, port=args.port)
+        return 0
+    if args.cmd == "rencana":
+        from .snapshot import planned_calls
+        run_date = date.fromisoformat(args.date) if args.date else today_wib()
+        print(json.dumps(planned_calls(load_sources(settings), load_servers(settings), run_date), ensure_ascii=False, indent=1))
         return 0
     if args.cmd == "demo":
         from .demo import seed_demo

@@ -6,6 +6,9 @@ Aturan wajib:
 - Angka perubahan (persen naik/turun) hanya boleh diambil dari bagian "perbandingan".
 - Tulis angka uang dalam format Indonesia, mis. "Rp404,9 jt" atau "Rp404.880.000". Persen ditulis "-18%".
 
+Data adalah data "kemarin" (lihat tanggal_data); sebut "kemarin", bukan "hari ini".
+Engagement rate (er) di DATA berupa pecahan; tulis sebagai persen dengan 1 desimal, mis. 0.097332 → "9,7%".
+
 Isi laporan:
 - poin_utama: 3 sampai 5 poin terpenting. Setiap poin berisi kalimat (teks) dan daftar angka yang dikutip di kalimat itu (angka), ditulis persis sama seperti di teks.
 - perhatian: hal yang turun tajam, error, atau mendesak. Boleh kosong.

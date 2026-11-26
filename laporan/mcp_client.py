@@ -85,6 +85,8 @@ class McpClient:
         self.transport = transport or HttpTransport()
 
     def _headers(self, server: ServerConf) -> dict:
+        if getattr(self.transport, "needs_auth", True) is False:
+            return {}
         return {"Authorization": f"Bearer {token_for(server)}"}
 
     async def call(self, server: str, tool: str, args: dict) -> Any:

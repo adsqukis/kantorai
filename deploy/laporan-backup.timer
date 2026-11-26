@@ -1,8 +1,8 @@
 [Unit]
-Description=Backup database laporan tiap hari 07.00 WIB
+Description=Backup database laporan tiap hari 09.00 WIB
 
 [Timer]
-OnCalendar=*-*-* 07:00:00 Asia/Jakarta
+OnCalendar=*-*-* 09:00:00 Asia/Jakarta
 Persistent=true
 
 [Install]

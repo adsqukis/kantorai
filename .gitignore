@@ -11,3 +11,4 @@ kantor3d/.env
 kantor3d/test-results/
 .lokal/
 *.egg-info/
+build/

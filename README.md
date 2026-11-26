@@ -1,6 +1,6 @@
 # Kantor AI Qukis
 
-Tim agent AI yang tiap pagi (06.30 WIB) membaca 4 web bisnis, menulis laporan, menyambungkan konten dengan penjualan per brand, lalu menampilkannya di:
+Tim agent AI yang tiap pagi (08.00 WIB) membaca 4 web bisnis, menulis laporan, menyambungkan konten dengan penjualan per brand, lalu menampilkannya di:
 
 - **Dashboard laporan**: ringkasan, saran, dan laporan per web.
 - **Kantor 3D** (fork [Claw3D](https://github.com/iamlukethedev/Claw3D), MIT): agent bekerja di meja saat ada kerjaan; saat santai mereka ngopi, nonton TV, atau tidur.

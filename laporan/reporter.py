@@ -6,6 +6,7 @@ from .fetch import fetch_source
 from .llm import LLMError, load_prompt
 from .models import BrandMap, RawData, Report, ReporterResult, SourceSpec
 from .numbers import report_numbers, verify_numbers
+from .timeutil import report_dates
 
 MAX_ITEM_CHARS = 40_000
 
@@ -20,7 +21,8 @@ def _clip(value: Any) -> Any:
 def build_payload(spec: SourceSpec, raw: RawData, brands: list[BrandMap]) -> str:
     return json.dumps({
         "web": spec.web,
-        "tanggal": raw.run_date.isoformat(),
+        "tanggal_laporan": raw.run_date.isoformat(),
+        "tanggal_data": report_dates(raw.run_date)["kemarin"],
         "brand": [{"nama": b.nama, "alias": b.alias.get(spec.id, [])} for b in brands],
         "data": {k: _clip(v) for k, v in raw.items.items()},
         "perbandingan": raw.comparisons,

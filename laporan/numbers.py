@@ -97,6 +97,9 @@ _IN_TEXT = re.compile(
     r"|(?:Rp\s?)?[-+]?\d(?:\s?(?:%|jt\b|juta\b|rb\b|ribu\b|M\b|miliar\b))?",
 )
 _YEAR = re.compile(r"(19|20)\d\d")
+_MONTH_AFTER = re.compile(
+    r"\s*(jan|feb|mar|apr|mei|jun|jul|agu|agt|sep|okt|nov|des)[a-z]*\b", re.I
+)
 
 
 def angka_in_text(text: str) -> list[str]:
@@ -104,8 +107,8 @@ def angka_in_text(text: str) -> list[str]:
     out = []
     for m in _IN_TEXT.finditer(text or ""):
         tok = m.group(0).strip()
-        if _YEAR.fullmatch(tok):
-            continue
+        if _YEAR.fullmatch(tok) or _MONTH_AFTER.match(text, m.end()):
+            continue  # tahun atau tanggal ("25 November"), bukan angka data
         out.append(tok)
     return out
 

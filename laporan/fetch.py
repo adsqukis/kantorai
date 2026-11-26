@@ -23,14 +23,29 @@ def _is_num(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
+# Baris list dicocokkan lewat nama (brand, CS, platform, SKU, ...) — urutan bisa berubah antar hari.
+_ROW_ID_KEYS = ("name", "nama", "csName", "platform", "sku", "handle", "method", "key", "source_type", "date", "tanggal")
+
+
+def _row_id(item: Any) -> str | None:
+    if isinstance(item, dict):
+        for k in _ROW_ID_KEYS:
+            v = item.get(k)
+            if isinstance(v, str) and v:
+                return v
+    return None
+
+
 def _leaves(obj: Any, prefix: str = "") -> dict[str, Any]:
     out: dict[str, Any] = {}
     if isinstance(obj, dict):
         for k, v in obj.items():
             out.update(_leaves(v, f"{prefix}{k}."))
     elif isinstance(obj, list):
+        ids = [_row_id(v) for v in obj]
+        named = all(ids) and len(set(ids)) == len(ids)
         for i, v in enumerate(obj):
-            out.update(_leaves(v, f"{prefix}{i}."))
+            out.update(_leaves(v, f"{prefix}{ids[i] if named else i}."))
     else:
         out[prefix[:-1]] = obj
     return out
