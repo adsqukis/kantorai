@@ -29,3 +29,11 @@ def test_probe_try_runs_source_calls(settings_fixture, monkeypatch, capsys):
     assert code == 0
     assert {c.tool for c in t.calls} >= {"get_overview", "get_live_sessions"}
     assert "overview" in out and "OK" in out
+
+
+def test_serve_starts_uvicorn_on_localhost(settings_fixture, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(cli, "get_settings", lambda: settings_fixture)
+    monkeypatch.setattr(cli, "uvicorn_run", lambda app, host, port, **kw: seen.update(host=host, port=port))
+    assert cli.main(["serve"]) == 0
+    assert seen == {"host": "127.0.0.1", "port": 8080}

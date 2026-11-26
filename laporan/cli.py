@@ -11,6 +11,11 @@ from .db import connect
 from .llm import LLM, make_client
 from .fetch import fetch_source
 from .timeutil import today_wib
+
+
+def uvicorn_run(app, host, port, **kw):
+    import uvicorn
+    uvicorn.run(app, host=host, port=port, proxy_headers=True, **kw)
 from .mcp_client import McpClient
 
 
@@ -68,6 +73,9 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     pr.add_argument("--try", dest="try_source", metavar="SOURCE_ID")
     rn = sub.add_parser("run", help="jalankan laporan pagi")
     rn.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
+    sv = sub.add_parser("serve", help="jalankan dashboard web")
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--port", type=int, default=8080)
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = get_settings()
@@ -78,6 +86,10 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     if args.cmd == "run":
         run_date = date.fromisoformat(args.date) if args.date else today_wib()
         return asyncio.run(_run(settings, run_date, transport, llm))
+    if args.cmd == "serve":
+        from .web.app import create_app
+        uvicorn_run(create_app(settings), host=args.host, port=args.port)
+        return 0
     return 2
 
 
