@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   LEISURE_ROTATE_MS,
   availableActivities,
-  buildLeisureOccupancy,
+  groupLeisureClaims,
   pickLeisureActivity,
   resolveLeisureSpot,
 } from "@/features/retro-office/core/leisure";
@@ -77,13 +77,13 @@ describe("resolveLeisureSpot", () => {
   });
 
   it("respects capacity so agents never share one spot", () => {
-    const occ = new Map([["bed", 1]]);
+    const occ = new Map([["bed", ["x"]]]);
     expect(resolveLeisureSpot("tidur", "a", ALL, occ)).toBeNull();
     const first = resolveLeisureSpot("ngopi", "a", ALL, new Map())!;
-    const second = resolveLeisureSpot("ngopi", "b", ALL, new Map([["cm", 1]]))!;
+    const second = resolveLeisureSpot("ngopi", "b", ALL, new Map([["cm", ["a"]]]))!;
     expect(second.uid).toBe("cm");
     expect(second.x).not.toBe(first.x);
-    expect(resolveLeisureSpot("ngopi", "c", ALL, new Map([["cm", 2]]))).toBeNull();
+    expect(resolveLeisureSpot("ngopi", "c", ALL, new Map([["cm", ["a", "b"]]]))).toBeNull();
   });
 
   it("returns null when the furniture is missing", () => {
@@ -91,16 +91,22 @@ describe("resolveLeisureSpot", () => {
   });
 });
 
-describe("buildLeisureOccupancy", () => {
-  it("counts idle agents heading to or using furniture, excluding one agent", () => {
-    const agents = [
-      { id: "a", status: "idle" as const, leisureUid: "bed" },
-      { id: "b", status: "idle" as const, leisureUid: "cm" },
-      { id: "c", status: "working" as const, leisureUid: "cm" },
-      { id: "d", status: "idle" as const },
-    ];
-    expect(buildLeisureOccupancy(agents, "a")).toEqual(new Map([["cm", 1]]));
-    expect(buildLeisureOccupancy(agents, "z")).toEqual(new Map([["bed", 1], ["cm", 1]]));
+describe("groupLeisureClaims", () => {
+  it("lists other agents claiming each furniture item", () => {
+    const claims = new Map([["a", "bed"], ["b", "cm"], ["c", "cm"]]);
+    expect(groupLeisureClaims(claims, "a")).toEqual(new Map([["cm", ["b", "c"]]]));
+    expect(groupLeisureClaims(claims, "b")).toEqual(new Map([["bed", ["a"]], ["cm", ["c"]]]));
+  });
+});
+
+describe("shared furniture slots", () => {
+  it("gives two agents on one couch / coffee machine different, stable spots", () => {
+    for (const act of ["nonton", "ngopi"] as const) {
+      const a = resolveLeisureSpot(act, "analis", ALL, new Map([[act === "nonton" ? "couch" : "cm", ["tiktok"]]]))!;
+      const b = resolveLeisureSpot(act, "tiktok", ALL, new Map([[act === "nonton" ? "couch" : "cm", ["analis"]]]))!;
+      expect(a.uid).toBe(b.uid);
+      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(20);
+    }
   });
 });
 
@@ -142,11 +148,19 @@ describe("planLeisureStep", () => {
   });
 
   it("tries another activity when the chosen one is full", () => {
-    const full = new Map([["cm", 2], ["couch", 2], ["bb", 1]]);
+    const full = new Map([["cm", ["x", "y"]], ["couch", ["x", "y"]], ["bb", ["z"]]]);
     const p = planLeisureStep({ agent: base, now: 0, furniture: ALL, occupancy: full, x: 0, y: 0, astar: astarOk });
     expect(p.kind).toBe("walk");
     if (p.kind === "walk") expect(p.spot.state).toBe("sleeping");
-    const allFull = new Map([...full, ["bed", 1]]);
+    const allFull = new Map([...full, ["bed", ["w"]]]);
     expect(planLeisureStep({ agent: base, now: 0, furniture: ALL, occupancy: allFull, x: 0, y: 0, astar: astarOk }).kind).toBe("none");
+  });
+});
+
+describe("couch seats", () => {
+  it("keeps both seats on the cushion, well inside the couch arms", () => {
+    const a = resolveLeisureSpot("nonton", "analis", ALL, new Map([["couch", ["tiktok"]]]))!;
+    const b = resolveLeisureSpot("nonton", "tiktok", ALL, new Map([["couch", ["analis"]]]))!;
+    for (const s of [a, b]) expect(Math.abs(s.x - 440)).toBeLessThanOrEqual(100 / 6 + 0.01);
   });
 });

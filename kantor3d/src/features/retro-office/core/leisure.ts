@@ -82,21 +82,27 @@ export const pickLeisureActivity = (
   return null;
 };
 
-const free = (item: FurnitureItem, occupied: Map<string, number>) =>
-  (occupied.get(item._uid) ?? 0) < (CAPACITY[item.type] ?? 1);
+/** occupied: uid furnitur → id agent LAIN yang memakainya. */
+export type LeisureOccupancy = Map<string, string[]>;
+
+const free = (item: FurnitureItem, occupied: LeisureOccupancy) =>
+  (occupied.get(item._uid)?.length ?? 0) < (CAPACITY[item.type] ?? 1);
+
+/** Slot stabil: urutan id agent di antara pemakai furnitur yang sama. */
+const slotOf = (item: FurnitureItem, agentId: string, occupied: LeisureOccupancy) =>
+  (occupied.get(item._uid) ?? []).filter((other) => other < agentId).length;
 
 export const resolveLeisureSpot = (
   activity: LeisureActivity,
   agentId: string,
   furniture: FurnitureItem[],
-  occupied: Map<string, number>,
+  occupied: LeisureOccupancy,
 ): LeisureSpot | null => {
-  void agentId;
   if (activity === "ngopi") {
     const machine = furniture.find((f) => f.type === "coffee_machine" && free(f, occupied));
     if (!machine) return null;
     const { cx, cy, height } = center(machine);
-    const slot = occupied.get(machine._uid) ?? 0;
+    const slot = slotOf(machine, agentId, occupied);
     const off = rotate(slot === 0 ? -12 : 12, height / 2 + 18, getItemRotationRadians(machine));
     const x = cx + off.x;
     const y = cy + off.y;
@@ -108,8 +114,8 @@ export const resolveLeisureSpot = (
     const { seat, tv } = pick;
     const s = center(seat);
     const t = center(tv);
-    const slot = occupied.get(seat._uid) ?? 0;
-    const along = seat.type === "couch" ? (slot === 0 ? -s.width / 4 : s.width / 4) : 0;
+    const slot = slotOf(seat, agentId, occupied);
+    const along = seat.type === "couch" ? (slot === 0 ? -s.width / 6 : s.width / 6) : 0;
     const off = rotate(along, 0, getItemRotationRadians(seat));
     const x = s.cx + off.x;
     const y = s.cy + off.y;
@@ -136,14 +142,15 @@ export const resolveLeisureSpot = (
   return { x, y, approachX: x, approachY: y, facing: theta, state: "sleeping", uid: bed._uid };
 };
 
-export const buildLeisureOccupancy = (
-  agents: Array<{ id: string; status: string; leisureUid?: string }>,
+/** Kelompokkan klaim agent lain per furnitur (agentId → uid furnitur). */
+export const groupLeisureClaims = (
+  claims: Map<string, string>,
   excludeId: string,
-): Map<string, number> => {
-  const out = new Map<string, number>();
-  for (const a of agents) {
-    if (a.id === excludeId || a.status !== "idle" || !a.leisureUid) continue;
-    out.set(a.leisureUid, (out.get(a.leisureUid) ?? 0) + 1);
+): LeisureOccupancy => {
+  const out: LeisureOccupancy = new Map();
+  for (const [agentId, uid] of claims) {
+    if (agentId === excludeId) continue;
+    out.set(uid, [...(out.get(uid) ?? []), agentId]);
   }
   return out;
 };
@@ -161,7 +168,7 @@ export const planLeisureStep = (params: {
   agent: { id: string; status: string; leisureRetryAt?: number };
   now: number;
   furniture: FurnitureItem[];
-  occupancy: Map<string, number>;
+  occupancy: LeisureOccupancy;
   x: number;
   y: number;
   astar: (fromX: number, fromY: number, toX: number, toY: number) => Array<{ x: number; y: number }>;

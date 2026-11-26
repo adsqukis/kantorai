@@ -643,10 +643,11 @@ export const ensureOfficeJukebox = (items: FurnitureItem[]): FurnitureItem[] => 
   return [...items, { ...DEFAULT_JUKEBOX, _uid: nextUid() }];
 };
 
-// kantorai: pojok santai bawaan (TV, sofa, 2 kasur, mesin kopi) di area kosong bagian bawah kantor.
+// kantorai: pojok santai bawaan — TV + sofa di area terbuka tengah, 2 kasur di bawah, mesin kopi bila belum ada.
+// Sofa diletakkan di sisi kamera dari TV supaya tidak tertutup tembok depan.
 const KANTOR_LOUNGE: Array<Omit<FurnitureItem, "_uid">> = [
-  { type: "tv", x: 580, y: 565, w: 80, h: 20, facing: 0 },
-  { type: "couch", x: 570, y: 640, w: 100, h: 40 },
+  { type: "tv", x: 600, y: 160, w: 80, h: 20, facing: 0 },
+  { type: "couch", x: 590, y: 236, w: 100, h: 40 },
   { type: "bed", x: 720, y: 590, w: 50, h: 90, color: "#93c5fd" },
   { type: "bed", x: 790, y: 590, w: 50, h: 90, color: "#fda4af" },
 ];

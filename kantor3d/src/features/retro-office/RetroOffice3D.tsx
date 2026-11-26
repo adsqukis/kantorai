@@ -161,9 +161,10 @@ import { AgentModel as AgentObjectModel } from "@/features/retro-office/objects/
 import { JukeboxModel as InteractiveJukeboxModel } from "@/features/retro-office/objects/Jukebox";
 import { BedModel, TvModel } from "@/features/retro-office/objects/Leisure"; // kantorai
 import { KANTOR_PALETTE_ENTRIES } from "@/features/retro-office/core/kantorFurniture"; // kantorai
+import { autoAssignDeskIndexes } from "@/features/retro-office/core/kantorDesks"; // kantorai
 import {
   LEISURE_RETRY_MS,
-  buildLeisureOccupancy,
+  groupLeisureClaims,
   planLeisureStep,
 } from "@/features/retro-office/core/leisure"; // kantorai
 import {
@@ -1774,6 +1775,11 @@ function useAgentTick(
     const awayFurniture = socialFurniture.filter((item) =>
       ["couch", "couch_v", "beanbag"].includes(item.type),
     );
+    // kantorai: klaim furnitur santai — diperbarui langsung di tick ini supaya dua agent tidak memilih tempat yang sama.
+    const leisureClaims = new Map<string, string>();
+    for (const a of renderAgentsRef.current) {
+      if (a.status === "idle" && "leisureUid" in a && a.leisureUid) leisureClaims.set(a.id, a.leisureUid);
+    }
     const moved = renderAgentsRef.current.map((agent) => {
       const isJanitor = "role" in agent && agent.role === "janitor";
       if (isJanitor && agent.janitorPauseUntil !== undefined) {
@@ -2078,14 +2084,13 @@ function useAgentTick(
                 agent,
                 now,
                 furniture: furnitureItems,
-                occupancy: buildLeisureOccupancy(
-                  renderAgentsRef.current as Array<{ id: string; status: string; leisureUid?: string }>,
-                  agent.id,
-                ),
+                occupancy: groupLeisureClaims(leisureClaims, agent.id),
                 x: nx,
                 y: ny,
                 astar: (fx, fy, tx, ty) => astar(fx, fy, tx, ty, grid),
               });
+              if (plan.kind === "arrive" || plan.kind === "walk") leisureClaims.set(agent.id, plan.spot.uid);
+              else leisureClaims.delete(agent.id);
               if (plan.kind === "arrive") {
                 return {
                   ...agent,
@@ -2321,7 +2326,7 @@ export function RetroOffice3D({
   githubSkill = null,
   taskManagerEnabled = false,
   soundclawEnabled = false,
-  officeTitle = "Luke Headquarters",
+  officeTitle = "Qukis Headquarters", // kantorai
   officeTitleLoaded = false,
   remoteOfficeEnabled = false,
   remoteOfficeSourceKind = "presence_endpoint",
@@ -2827,6 +2832,10 @@ export function RetroOffice3D({
     [furniture],
   );
   const deskLocations = useMemo(() => getDeskLocations(furniture), [furniture]);
+  const localAgentIdsKey = agents
+    .filter((agent) => !isRemoteOfficeAgentId(agent.id))
+    .map((agent) => agent.id)
+    .join("|");
   const assignedDeskIndexByAgentId = useMemo(() => {
     const next: Record<string, number> = {};
     deskItems.forEach((item, index) => {
@@ -2834,8 +2843,13 @@ export function RetroOffice3D({
       if (!agentId) return;
       next[agentId] = index;
     });
-    return next;
-  }, [deskAssignmentByDeskUid, deskItems]);
+    // kantorai: agent tanpa meja mendapat meja kosong otomatis.
+    return autoAssignDeskIndexes(
+      deskItems.length,
+      next,
+      localAgentIdsKey ? localAgentIdsKey.split("|") : [],
+    );
+  }, [deskAssignmentByDeskUid, deskItems, localAgentIdsKey]);
   const janitorCleaningStops = useMemo(
     () => getJanitorCleaningStops(furniture),
     [furniture],

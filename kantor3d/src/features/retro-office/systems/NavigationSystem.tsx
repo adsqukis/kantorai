@@ -39,7 +39,11 @@ export function applyAgentCollisionBumps({
     if (
       moved[i].state === "sitting" ||
       moved[i].state === "working_out" ||
-      moved[i].state === "dancing"
+      moved[i].state === "dancing" ||
+      // kantorai: agent yang sedang santai (duduk nonton, tidur, ngopi) tidak didorong.
+      moved[i].state === "watching" ||
+      moved[i].state === "sleeping" ||
+      moved[i].state === "drinking"
     )
       continue;
     if (moved[i].pingPongUntil !== undefined && moved[i].state !== "walking")
