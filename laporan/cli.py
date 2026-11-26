@@ -1,9 +1,14 @@
 import argparse
 import asyncio
 import json
+import logging
 import sys
+from datetime import date
 
-from .config import Settings, load_servers, load_sources
+from .config import Settings, load_brands, load_servers, load_sources
+from .coordinator import run_day
+from .db import connect
+from .llm import LLM, make_client
 from .fetch import fetch_source
 from .timeutil import today_wib
 from .mcp_client import McpClient
@@ -44,18 +49,35 @@ async def _probe_try(settings: Settings, source_id: str, transport) -> int:
     return 1 if raw.errors else 0
 
 
-def main(argv: list[str] | None = None, *, transport=None) -> int:
+async def _run(settings: Settings, run_date: date, transport, llm) -> int:
+    client = McpClient(load_servers(settings), transport=transport)
+    llm = llm or LLM(make_client(settings.deepseek_api_key), settings.deepseek_model)
+    out = await run_day(run_date, client=client, llm=llm, conn=connect(settings.db_path),
+                        sources=load_sources(settings), brands=load_brands(settings))
+    for r in out.reporters:
+        print(f"  {r.source_id:9} {r.status:12} percobaan {r.attempts}  {r.error or ''}")
+    print(f"Status run {run_date}: {out.status}")
+    return 1 if out.status == "GAGAL" else 0
+
+
+def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     p = argparse.ArgumentParser(prog="laporan")
     sub = p.add_subparsers(dest="cmd", required=True)
     pr = sub.add_parser("probe", help="lihat daftar tool tiap server MCP")
     pr.add_argument("--server")
     pr.add_argument("--try", dest="try_source", metavar="SOURCE_ID")
+    rn = sub.add_parser("run", help="jalankan laporan pagi")
+    rn.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
     args = p.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = get_settings()
     if args.cmd == "probe":
         if args.try_source:
             return asyncio.run(_probe_try(settings, args.try_source, transport))
         return asyncio.run(_probe(settings, args.server, transport))
+    if args.cmd == "run":
+        run_date = date.fromisoformat(args.date) if args.date else today_wib()
+        return asyncio.run(_run(settings, run_date, transport, llm))
     return 2
 
 

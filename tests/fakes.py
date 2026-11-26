@@ -76,3 +76,31 @@ class FakeLLM:
         if isinstance(out, Exception):
             raise out
         return out
+
+
+class SchemaLLM:
+    """LLM palsu yang menjawab berdasarkan skema yang diminta (aman untuk pemanggilan paralel)."""
+
+    def __init__(self, by_schema: dict):
+        self.by_schema = by_schema
+        self.calls: list = []
+
+    async def complete(self, system: str, user: str, schema):
+        self.calls.append(schema.__name__)
+        out = self.by_schema[schema.__name__]
+        if isinstance(out, Exception):
+            raise out
+        return out
+
+
+@dataclass
+class FlakyClient(FakeClient):
+    """Gagal `fail_times[tool]` kali pertama, lalu berhasil."""
+    fail_times: dict[str, int] = field(default_factory=dict)
+
+    async def call(self, server: str, tool: str, args: dict) -> Any:
+        if self.fail_times.get(tool, 0) > 0:
+            self.fail_times[tool] -= 1
+            self.calls.append(ClientCall(server, tool, args))
+            raise RuntimeError(f"{tool} sementara mati")
+        return await super().call(server, tool, args)
