@@ -1,0 +1,2 @@
+[console_scripts]
+laporan = laporan.cli:main

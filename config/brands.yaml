@@ -1,0 +1,11 @@
+# Pemetaan nama brand antar web. Alias per sumber: konten, tiktok, taqis, keuangan.
+# DRAF — dilengkapi setelah `laporan probe` dan dicek pemilik.
+brands:
+  - nama: Generos Milk
+    alias: {konten: [Generos Milk]}
+  - nama: Generos Klasik
+    alias: {konten: [Generos Klasik]}
+  - nama: Expedelly
+    alias: {konten: [Expedelly]}
+  - nama: Visikids
+    alias: {konten: [Visikids]}
