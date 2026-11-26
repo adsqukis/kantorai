@@ -113,7 +113,7 @@ describe("shared furniture slots", () => {
 import { planLeisureStep } from "@/features/retro-office/core/leisure";
 
 describe("planLeisureStep", () => {
-  const path = [{ x: 1, y: 1 }];
+  const path = [{ x: 1, y: 1 }, { x: 500, y: 500 }];
   const base = { id: "konten", status: "idle" as const };
   const astarOk = () => path;
   const astarNone = () => [];
@@ -162,5 +162,15 @@ describe("couch seats", () => {
     const a = resolveLeisureSpot("nonton", "analis", ALL, new Map([["couch", ["tiktok"]]]))!;
     const b = resolveLeisureSpot("nonton", "tiktok", ALL, new Map([["couch", ["analis"]]]))!;
     for (const s of [a, b]) expect(Math.abs(s.x - 440)).toBeLessThanOrEqual(100 / 6 + 0.01);
+  });
+});
+
+describe("planLeisureStep at the end of a partial route", () => {
+  it("counts as arrived when the reachable route ends where the agent already stands", () => {
+    const spot = resolveLeisureSpot("ngopi", "konten", ALL, new Map())!;
+    const here = { x: spot.approachX + 40, y: spot.approachY }; // titik terdekat yang bisa dicapai
+    const p = planLeisureStep({ agent: { id: "konten", status: "idle" }, now: 0, furniture: [coffee], occupancy: new Map(),
+      x: here.x, y: here.y, astar: () => [{ x: here.x, y: here.y }] });
+    expect(p.kind).toBe("arrive");
   });
 });

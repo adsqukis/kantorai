@@ -2844,12 +2844,19 @@ export function RetroOffice3D({
       next[agentId] = index;
     });
     // kantorai: agent tanpa meja mendapat meja kosong otomatis.
+    // Hanya meja yang bisa dicapai dari area tengah kantor (beberapa meja bawaan terkurung).
+    const grid = buildNavGrid(furniture);
+    const hub = ROAM_POINTS[0];
     return autoAssignDeskIndexes(
       deskItems.length,
       next,
       localAgentIdsKey ? localAgentIdsKey.split("|") : [],
+      (index) => {
+        const loc = deskLocations[index];
+        return Boolean(loc && hub && astar(hub.x, hub.y, loc.x, loc.y, grid).length > 0);
+      },
     );
-  }, [deskAssignmentByDeskUid, deskItems, localAgentIdsKey]);
+  }, [deskAssignmentByDeskUid, deskItems, deskLocations, furniture, localAgentIdsKey]);
   const janitorCleaningStops = useMemo(
     () => getJanitorCleaningStops(furniture),
     [furniture],

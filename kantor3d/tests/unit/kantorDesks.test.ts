@@ -15,3 +15,9 @@ describe("autoAssignDeskIndexes", () => {
     expect(autoAssignDeskIndexes(3, { ghost: 0 }, ["a"])).toEqual({ ghost: 0, a: 1 });
   });
 });
+
+describe("autoAssignDeskIndexes with unreachable desks", () => {
+  it("skips desks agents cannot walk to", () => {
+    expect(autoAssignDeskIndexes(4, {}, ["a", "b"], (i) => i !== 0)).toEqual({ a: 1, b: 2 });
+  });
+});

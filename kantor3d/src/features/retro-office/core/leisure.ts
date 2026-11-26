@@ -15,7 +15,13 @@ export const LEISURE_RETRY_MS = 60 * 1000;
 const ORDER: LeisureActivity[] = ["ngopi", "nonton", "tidur"];
 const TV_RADIUS = 400;
 const SEAT_TYPES = ["couch", "couch_v", "beanbag"];
-const CAPACITY: Record<string, number> = { coffee_machine: 2, couch: 2, couch_v: 1, beanbag: 1, bed: 1 };
+const CAPACITY: Record<string, number> = {
+  coffee_machine: 2,
+  couch: 2,
+  couch_v: 1,
+  beanbag: 1,
+  bed: 1,
+};
 const BODY_LENGTH = 55; // panjang badan agent berbaring, satuan kanvas
 
 export type LeisureSpot = {
@@ -47,7 +53,8 @@ const hash = (s: string) => {
 
 const seatsNearTv = (furniture: FurnitureItem[]) => {
   const tvs = furniture.filter((f) => f.type === "tv");
-  const out: Array<{ seat: FurnitureItem; tv: FurnitureItem; dist: number }> = [];
+  const out: Array<{ seat: FurnitureItem; tv: FurnitureItem; dist: number }> =
+    [];
   for (const seat of furniture.filter((f) => SEAT_TYPES.includes(f.type))) {
     const s = center(seat);
     let best: { tv: FurnitureItem; dist: number } | null = null;
@@ -61,7 +68,9 @@ const seatsNearTv = (furniture: FurnitureItem[]) => {
   return out.sort((a, b) => a.dist - b.dist);
 };
 
-export const availableActivities = (furniture: FurnitureItem[]): LeisureActivity[] => {
+export const availableActivities = (
+  furniture: FurnitureItem[],
+): LeisureActivity[] => {
   const out: LeisureActivity[] = [];
   if (furniture.some((f) => f.type === "coffee_machine")) out.push("ngopi");
   if (seatsNearTv(furniture).length > 0) out.push("nonton");
@@ -74,7 +83,8 @@ export const pickLeisureActivity = (
   now: number,
   available: LeisureActivity[],
 ): LeisureActivity | null => {
-  const start = (hash(agentId) + Math.floor(now / LEISURE_ROTATE_MS)) % ORDER.length;
+  const start =
+    (hash(agentId) + Math.floor(now / LEISURE_ROTATE_MS)) % ORDER.length;
   for (let i = 0; i < ORDER.length; i++) {
     const a = ORDER[(start + i) % ORDER.length];
     if (available.includes(a)) return a;
@@ -89,58 +99,112 @@ const free = (item: FurnitureItem, occupied: LeisureOccupancy) =>
   (occupied.get(item._uid)?.length ?? 0) < (CAPACITY[item.type] ?? 1);
 
 /** Slot stabil: urutan id agent di antara pemakai furnitur yang sama. */
-const slotOf = (item: FurnitureItem, agentId: string, occupied: LeisureOccupancy) =>
-  (occupied.get(item._uid) ?? []).filter((other) => other < agentId).length;
+const slotOf = (
+  item: FurnitureItem,
+  agentId: string,
+  occupied: LeisureOccupancy,
+) => (occupied.get(item._uid) ?? []).filter((other) => other < agentId).length;
 
+/** Semua kandidat tempat untuk satu kegiatan, urut dari yang paling diutamakan. */
+export const resolveLeisureSpots = (
+  activity: LeisureActivity,
+  agentId: string,
+  furniture: FurnitureItem[],
+  occupied: LeisureOccupancy,
+): LeisureSpot[] => {
+  if (activity === "ngopi") {
+    const out: LeisureSpot[] = [];
+    for (const machine of furniture.filter(
+      (f) => f.type === "coffee_machine" && free(f, occupied),
+    )) {
+      const { cx, cy, width, height } = center(machine);
+      const slot = slotOf(machine, agentId, occupied);
+      const side = slot === 0 ? -12 : 12;
+      const theta = getItemRotationRadians(machine);
+      // Depan dulu, lalu kiri, kanan, belakang — mesin sering menempel ke counter atau tembok.
+      const sides: Array<[number, number]> = [
+        [side, height / 2 + 18],
+        [-(width / 2 + 18), side],
+        [width / 2 + 18, side],
+        [side, -(height / 2 + 18)],
+      ];
+      for (const [lx, lz] of sides) {
+        const off = rotate(lx, lz, theta);
+        const x = cx + off.x;
+        const y = cy + off.y;
+        out.push({
+          x,
+          y,
+          approachX: x,
+          approachY: y,
+          facing: Math.atan2(cx - x, cy - y),
+          state: "drinking",
+          uid: machine._uid,
+        });
+      }
+    }
+    return out;
+  }
+  if (activity === "nonton") {
+    const out: LeisureSpot[] = [];
+    for (const { seat, tv } of seatsNearTv(furniture).filter(({ seat }) =>
+      free(seat, occupied),
+    )) {
+      const s = center(seat);
+      const t = center(tv);
+      const slot = slotOf(seat, agentId, occupied);
+      const along =
+        seat.type === "couch" ? (slot === 0 ? -s.width / 6 : s.width / 6) : 0;
+      const off = rotate(along, 0, getItemRotationRadians(seat));
+      const x = s.cx + off.x;
+      const y = s.cy + off.y;
+      const dist = Math.hypot(t.cx - x, t.cy - y) || 1;
+      const reach = Math.min(s.width, s.height) / 2 + 20;
+      out.push({
+        x,
+        y,
+        approachX: x + ((t.cx - x) / dist) * reach,
+        approachY: y + ((t.cy - y) / dist) * reach,
+        facing: Math.atan2(t.cx - x, t.cy - y),
+        state: "watching",
+        uid: seat._uid,
+      });
+    }
+    return out;
+  }
+  return furniture
+    .filter((f) => f.type === "bed" && free(f, occupied))
+    .map((bed) => {
+      const { cx, cy, height } = center(bed);
+      const theta = getItemRotationRadians(bed);
+      // Titik asal agent = kaki; kepala mengarah ke sandaran (sisi -z lokal).
+      const feet = rotate(
+        0,
+        Math.min(height / 2 - 12, BODY_LENGTH - 25),
+        theta,
+      );
+      const x = cx + feet.x;
+      const y = cy + feet.y;
+      return {
+        x,
+        y,
+        approachX: x,
+        approachY: y,
+        facing: theta,
+        state: "sleeping" as const,
+        uid: bed._uid,
+      };
+    });
+};
+
+/** Kandidat utama (untuk tampilan/uji); null bila tidak ada tempat. */
 export const resolveLeisureSpot = (
   activity: LeisureActivity,
   agentId: string,
   furniture: FurnitureItem[],
   occupied: LeisureOccupancy,
-): LeisureSpot | null => {
-  if (activity === "ngopi") {
-    const machine = furniture.find((f) => f.type === "coffee_machine" && free(f, occupied));
-    if (!machine) return null;
-    const { cx, cy, height } = center(machine);
-    const slot = slotOf(machine, agentId, occupied);
-    const off = rotate(slot === 0 ? -12 : 12, height / 2 + 18, getItemRotationRadians(machine));
-    const x = cx + off.x;
-    const y = cy + off.y;
-    return { x, y, approachX: x, approachY: y, facing: Math.atan2(cx - x, cy - y), state: "drinking", uid: machine._uid };
-  }
-  if (activity === "nonton") {
-    const pick = seatsNearTv(furniture).find(({ seat }) => free(seat, occupied));
-    if (!pick) return null;
-    const { seat, tv } = pick;
-    const s = center(seat);
-    const t = center(tv);
-    const slot = slotOf(seat, agentId, occupied);
-    const along = seat.type === "couch" ? (slot === 0 ? -s.width / 6 : s.width / 6) : 0;
-    const off = rotate(along, 0, getItemRotationRadians(seat));
-    const x = s.cx + off.x;
-    const y = s.cy + off.y;
-    const dist = Math.hypot(t.cx - x, t.cy - y) || 1;
-    const reach = Math.min(s.width, s.height) / 2 + 20;
-    return {
-      x,
-      y,
-      approachX: x + ((t.cx - x) / dist) * reach,
-      approachY: y + ((t.cy - y) / dist) * reach,
-      facing: Math.atan2(t.cx - x, t.cy - y),
-      state: "watching",
-      uid: seat._uid,
-    };
-  }
-  const bed = furniture.find((f) => f.type === "bed" && free(f, occupied));
-  if (!bed) return null;
-  const { cx, cy, height } = center(bed);
-  const theta = getItemRotationRadians(bed);
-  // Titik asal agent = kaki; kepala mengarah ke sandaran (sisi -z lokal).
-  const feet = rotate(0, Math.min(height / 2 - 12, BODY_LENGTH - 25), theta);
-  const x = cx + feet.x;
-  const y = cy + feet.y;
-  return { x, y, approachX: x, approachY: y, facing: theta, state: "sleeping", uid: bed._uid };
-};
+): LeisureSpot | null =>
+  resolveLeisureSpots(activity, agentId, furniture, occupied)[0] ?? null;
 
 /** Kelompokkan klaim agent lain per furnitur (agentId → uid furnitur). */
 export const groupLeisureClaims = (
@@ -171,7 +235,12 @@ export const planLeisureStep = (params: {
   occupancy: LeisureOccupancy;
   x: number;
   y: number;
-  astar: (fromX: number, fromY: number, toX: number, toY: number) => Array<{ x: number; y: number }>;
+  astar: (
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+  ) => Array<{ x: number; y: number }>;
 }): LeisurePlan => {
   const { agent, now, furniture, occupancy, x, y, astar } = params;
   if (agent.status !== "idle") return { kind: "none" };
@@ -179,16 +248,30 @@ export const planLeisureStep = (params: {
   const available = availableActivities(furniture);
   const first = pickLeisureActivity(agent.id, now, available);
   if (!first) return { kind: "none" };
-  const order = [first, ...ORDER.filter((a) => a !== first && available.includes(a))];
+  const order = [
+    first,
+    ...ORDER.filter((a) => a !== first && available.includes(a)),
+  ];
+  let sawSpot = false;
   for (const activity of order) {
-    const spot = resolveLeisureSpot(activity, agent.id, furniture, occupancy);
-    if (!spot) continue;
-    const atSpot = Math.hypot(x - spot.x, y - spot.y) <= 2;
-    if (atSpot || Math.hypot(x - spot.approachX, y - spot.approachY) <= ARRIVE_DISTANCE) {
-      return { kind: "arrive", spot };
+    const spots = resolveLeisureSpots(activity, agent.id, furniture, occupancy);
+    for (const spot of spots) {
+      sawSpot = true;
+      const atSpot = Math.hypot(x - spot.x, y - spot.y) <= 2;
+      if (
+        atSpot ||
+        Math.hypot(x - spot.approachX, y - spot.approachY) <= ARRIVE_DISTANCE
+      ) {
+        return { kind: "arrive", spot };
+      }
+      const path = astar(x, y, spot.approachX, spot.approachY);
+      const end = path[path.length - 1];
+      // Titik tujuan terhalang → rute berakhir di sel terdekat. Sudah di sana = sampai.
+      if (end && path.length <= 1 && Math.hypot(end.x - x, end.y - y) <= ARRIVE_DISTANCE) {
+        return { kind: "arrive", spot };
+      }
+      if (path.length > 0) return { kind: "walk", spot, path };
     }
-    const path = astar(x, y, spot.approachX, spot.approachY);
-    return path.length > 0 ? { kind: "walk", spot, path } : { kind: "blocked" };
   }
-  return { kind: "none" };
+  return sawSpot ? { kind: "blocked" } : { kind: "none" };
 };
