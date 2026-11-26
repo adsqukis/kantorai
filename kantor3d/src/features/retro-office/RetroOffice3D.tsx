@@ -84,6 +84,7 @@ import {
   ensureOfficeQaLab,
   ensureOfficeSmsBooth,
   ensureOfficeJukebox,
+  ensureKantorLounge,
   ensureOfficeServerRoom,
   isRetiredPingPongLamp,
   materializeDefaults,
@@ -2273,6 +2274,7 @@ const buildInitialFurnitureLayout = (
   storageNamespace: string,
   layoutPreset: OfficeLayoutPreset,
 ): FurnitureItem[] =>
+  ensureKantorLounge( // kantorai
   ensureOfficeKanbanBoard(
     ensureOfficeJukebox(
       ensureOfficeQaLab(
@@ -2291,6 +2293,7 @@ const buildInitialFurnitureLayout = (
         ),
       ),
     ),
+  ),
   );
 
 export function RetroOffice3D({

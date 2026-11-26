@@ -643,6 +643,24 @@ export const ensureOfficeJukebox = (items: FurnitureItem[]): FurnitureItem[] => 
   return [...items, { ...DEFAULT_JUKEBOX, _uid: nextUid() }];
 };
 
+// kantorai: pojok santai bawaan (TV, sofa, 2 kasur, mesin kopi) di area kosong bagian bawah kantor.
+const KANTOR_LOUNGE: Array<Omit<FurnitureItem, "_uid">> = [
+  { type: "tv", x: 580, y: 565, w: 80, h: 20, facing: 0 },
+  { type: "couch", x: 570, y: 640, w: 100, h: 40 },
+  { type: "bed", x: 720, y: 590, w: 50, h: 90, color: "#93c5fd" },
+  { type: "bed", x: 790, y: 590, w: 50, h: 90, color: "#fda4af" },
+];
+const KANTOR_COFFEE: Omit<FurnitureItem, "_uid"> = { type: "coffee_machine", x: 870, y: 580 };
+
+export const ensureKantorLounge = (items: FurnitureItem[]): FurnitureItem[] => {
+  if (items.some((item) => item.type === "tv")) return items;
+  const added = KANTOR_LOUNGE.map((item) => ({ ...item, _uid: nextUid() }));
+  if (!items.some((item) => item.type === "coffee_machine")) {
+    added.push({ ...KANTOR_COFFEE, _uid: nextUid() });
+  }
+  return [...items, ...added];
+};
+
 export const ensureOfficeKanbanBoard = (items: FurnitureItem[]): FurnitureItem[] => {
   if (items.some((item) => item.type === "kanban_board")) return items;
   return [...items, { ...DEFAULT_KANBAN_BOARD, _uid: nextUid() }];
