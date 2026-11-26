@@ -44,3 +44,17 @@ async def test_summary_max_five():
     six = json.dumps({"penting": ["x"] * 6, "lakukan": []})
     with pytest.raises(LLMError):
         await run_summary(LLM(FakeOpenAI([six, six])), [ok_result("tiktok")], None)
+
+
+async def test_saran_with_made_up_number_marked_dugaan():
+    s = [Saran(brand="Generos Milk", teks="Omset bisa naik ke Rp900 jt", alasan="a")] + SARAN[:2]
+    out = await run_analyst(FakeLLM([Analysis(saran=s)]), [ok_result("tiktok")], RAWS, BRANDS, D)
+    assert out.saran[0].dugaan is True
+    assert any("Rp900 jt" in p for p in out.peringatan)
+
+
+def test_filter_summary_drops_points_with_unverified_numbers():
+    from laporan.analyst import combine_raw, filter_summary
+    s = Summary(penting=["Omset TikTok Rp404,9 jt, turun 18%", "Omset Rp777 jt"], lakukan=["Cek CS"])
+    out = filter_summary(s, combine_raw(RAWS, D))
+    assert out.penting == ["Omset TikTok Rp404,9 jt, turun 18%"] and out.lakukan == ["Cek CS"]

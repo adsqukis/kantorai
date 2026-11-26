@@ -41,3 +41,13 @@ def test_report_numbers_gathers_all():
     r = Report(poin_utama=[Poin(teks="t", angka=["Rp1 jt"])],
                per_brand=[BrandAngka(brand="Generos Milk", angka={"omset": "Rp2 jt"})])
     assert report_numbers(r) == ["Rp1 jt", "Rp2 jt"]
+
+
+def test_numbers_in_text_are_found():
+    from laporan.numbers import angka_in_text
+    assert angka_in_text("Omset Rp404,9 jt, turun 18% dan 6 sesi live di 2026") == ["Rp404,9 jt", "18%", "6"]
+
+
+def test_report_numbers_includes_numbers_written_in_poin_text():
+    r = Report(poin_utama=[Poin(teks="Omset Rp999 jt hari ini", angka=[])])
+    assert verify_numbers(report_numbers(r), RAW) == ["Rp999 jt"]

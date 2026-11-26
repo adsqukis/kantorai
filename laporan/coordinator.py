@@ -3,7 +3,7 @@ import logging
 from datetime import date
 
 from . import db
-from .analyst import run_analyst, run_summary
+from .analyst import combine_raw, filter_summary, run_analyst, run_summary
 from .llm import LLMError
 from .models import BrandMap, RawData, ReporterResult, RunSummary, SourceSpec
 from .reporter import run_reporter
@@ -56,7 +56,7 @@ async def run_day(run_date: date, *, client, llm, conn, sources: list[SourceSpec
     db.save_analysis(conn, run_id, analysis)
 
     try:
-        summary = await run_summary(llm, results, analysis)
+        summary = filter_summary(await run_summary(llm, results, analysis), combine_raw(raws, run_date))
     except LLMError as e:
         log.warning("ringkasan gagal: %s", e)
         summary = None

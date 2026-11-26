@@ -92,8 +92,30 @@ def verify_numbers(angka: list[str], raw: RawData) -> list[str]:
     return bad
 
 
+_IN_TEXT = re.compile(
+    r"(?:Rp\s?)?[-+]?\d[\d.,]*\d(?:\s?(?:%|jt\b|juta\b|rb\b|ribu\b|M\b|miliar\b))?"
+    r"|(?:Rp\s?)?[-+]?\d(?:\s?(?:%|jt\b|juta\b|rb\b|ribu\b|M\b|miliar\b))?",
+)
+_YEAR = re.compile(r"(19|20)\d\d")
+
+
+def angka_in_text(text: str) -> list[str]:
+    """Semua angka yang tertulis di kalimat (tahun 19xx/20xx dilewati)."""
+    out = []
+    for m in _IN_TEXT.finditer(text or ""):
+        tok = m.group(0).strip()
+        if _YEAR.fullmatch(tok):
+            continue
+        out.append(tok)
+    return out
+
+
 def report_numbers(r: Report) -> list[str]:
-    out = [x for p in r.poin_utama for x in p.angka]
+    out: list[str] = []
+    for p in r.poin_utama:
+        for x in p.angka + angka_in_text(p.teks):
+            if x not in out:
+                out.append(x)
     for b in r.per_brand:
-        out.extend(b.angka.values())
+        out.extend(v for v in b.angka.values() if v not in out)
     return out

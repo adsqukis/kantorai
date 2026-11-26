@@ -3,7 +3,7 @@ from datetime import date
 
 from .llm import load_prompt
 from .models import Analysis, BrandMap, RawData, ReporterResult, Summary
-from .numbers import verify_numbers
+from .numbers import angka_in_text, verify_numbers
 
 
 def _laporan(results: list[ReporterResult]) -> dict:
@@ -37,7 +37,7 @@ async def run_analyst(llm, results: list[ReporterResult], raws: list[RawData], b
     combined = combine_raw(raws, run_date)
     kept = []
     for t in analysis.temuan:
-        bad = verify_numbers(t.bukti, combined)
+        bad = verify_numbers(t.bukti + angka_in_text(t.teks), combined)
         if bad:
             analysis.peringatan.append(
                 f"Temuan untuk {t.brand} dibuang: angka {', '.join(bad)} tidak ada di data."
@@ -45,6 +45,13 @@ async def run_analyst(llm, results: list[ReporterResult], raws: list[RawData], b
         else:
             kept.append(t)
     analysis.temuan = kept
+    for sr in analysis.saran:
+        bad = verify_numbers(angka_in_text(sr.teks) + angka_in_text(sr.alasan), combined)
+        if bad:
+            sr.dugaan = True
+            analysis.peringatan.append(
+                f"Saran untuk {sr.brand} memuat angka yang tidak ada di data ({', '.join(bad)}), jadi ditandai dugaan."
+            )
     for sid in gagal:
         if not any(sid in p for p in analysis.peringatan):
             analysis.peringatan.append(f"Data {sid} gagal diambil hari ini, jadi analisa untuk bagian itu tidak lengkap.")
@@ -58,3 +65,10 @@ async def run_summary(llm, results: list[ReporterResult], analysis: Analysis | N
         "gagal": _gagal(results),
     }, ensure_ascii=False)
     return await llm.complete(load_prompt("summary"), payload, Summary)
+
+
+def filter_summary(summary: Summary, combined: RawData) -> Summary:
+    """Buang poin ringkasan yang memuat angka yang tidak ada di data."""
+    def ok(line: str) -> bool:
+        return not verify_numbers(angka_in_text(line), combined)
+    return Summary(penting=[p for p in summary.penting if ok(p)], lakukan=[p for p in summary.lakukan if ok(p)])

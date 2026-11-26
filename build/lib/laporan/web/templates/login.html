@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Masuk · Laporan Pagi{% endblock %}
+{% block body %}
+<div class="card" style="max-width:360px;margin:15vh auto 0;display:grid;gap:12px">
+  <h1>Laporan Pagi</h1>
+  <form method="post" action="/login" style="display:grid;gap:10px">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required style="padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
+    {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+    <button type="submit">Masuk</button>
+  </form>
+</div>
+{% endblock %}

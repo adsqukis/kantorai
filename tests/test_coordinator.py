@@ -77,3 +77,8 @@ def test_cli_run_exit_code(monkeypatch, settings_fixture, status, code):
     monkeypatch.setattr(cli, "get_settings", lambda: settings_fixture)
     monkeypatch.setattr(cli, "run_day", fake_run)
     assert cli.main(["run", "--date", "2026-11-26"], transport=object(), llm=object()) == code
+
+
+async def test_summary_numbers_checked_against_data(tmp_path):
+    conn, out = await go(tmp_path, FakeClient(), llm(Summary=Summary(penting=["Omset Rp123 jt", "Semua aman"], lakukan=[])))
+    assert out.summary.penting == ["Semua aman"]
