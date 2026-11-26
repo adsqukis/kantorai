@@ -5,16 +5,15 @@ import { useEffect, useState } from "react";
 import { fetchCustomRuntimeJson } from "@/lib/runtime/custom/http";
 import { mapKantorStatus, type KantorStatusMap } from "@/lib/kantor/statusFeed";
 
+const EMPTY: KantorStatusMap = {};
+
 export function useKantorStatusFeed(
   runtimeUrl: string | null,
   intervalMs = 10_000,
 ): KantorStatusMap {
   const [feed, setFeed] = useState<KantorStatusMap>({});
   useEffect(() => {
-    if (!runtimeUrl) {
-      setFeed({});
-      return;
-    }
+    if (!runtimeUrl) return;
     let cancelled = false;
     const poll = async () => {
       try {
@@ -31,5 +30,5 @@ export function useKantorStatusFeed(
       window.clearInterval(timer);
     };
   }, [runtimeUrl, intervalMs]);
-  return feed;
+  return runtimeUrl ? feed : EMPTY;
 }
