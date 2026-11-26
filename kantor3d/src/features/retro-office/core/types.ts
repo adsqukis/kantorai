@@ -38,7 +38,21 @@ export type RenderAgent = SceneActor & {
   frame: number;
   walkSpeed: number;
   phaseOffset: number;
-  state: "walking" | "sitting" | "standing" | "away" | "working_out" | "dancing";
+  state:
+    | "walking"
+    | "sitting"
+    | "standing"
+    | "away"
+    | "working_out"
+    | "dancing"
+    // kantorai: pose santai
+    | "drinking"
+    | "watching"
+    | "sleeping";
+  /** kantorai: furnitur santai yang sedang dituju/dipakai. */
+  leisureUid?: string;
+  /** kantorai: jangan coba santai lagi sebelum waktu ini (jalan buntu). */
+  leisureRetryAt?: number;
   awayUntil?: number;
   separationReplanAt?: number;
   bumpedUntil?: number;

@@ -161,6 +161,11 @@ import { JukeboxModel as InteractiveJukeboxModel } from "@/features/retro-office
 import { BedModel, TvModel } from "@/features/retro-office/objects/Leisure"; // kantorai
 import { KANTOR_PALETTE_ENTRIES } from "@/features/retro-office/core/kantorFurniture"; // kantorai
 import {
+  LEISURE_RETRY_MS,
+  buildLeisureOccupancy,
+  planLeisureStep,
+} from "@/features/retro-office/core/leisure"; // kantorai
+import {
   FurnitureModel as GenericFurnitureModel,
   InstancedFurnitureItems as InstancedFurnitureItemsModel,
   PlacementGhost as FurniturePlacementGhost,
@@ -1854,6 +1859,7 @@ function useAgentTick(
         dy = wpY - agent.y;
       const dist = Math.hypot(dx, dy);
 
+      let leisureRetryAt: number | undefined; // kantorai
       let ns = agent.state,
         nx = agent.x,
         ny = agent.y,
@@ -2065,6 +2071,51 @@ function useAgentTick(
           } else if (agent.status === "error") {
             ns = "standing";
           } else {
+            // kantorai: santai — ngopi, nonton TV, atau tidur. Tanpa furnitur santai → perilaku bawaan di bawah.
+            if (!isJanitor && !isRemoteOfficeAgentId(agent.id)) {
+              const plan = planLeisureStep({
+                agent,
+                now,
+                furniture: furnitureItems,
+                occupancy: buildLeisureOccupancy(
+                  renderAgentsRef.current as Array<{ id: string; status: string; leisureUid?: string }>,
+                  agent.id,
+                ),
+                x: nx,
+                y: ny,
+                astar: (fx, fy, tx, ty) => astar(fx, fy, tx, ty, grid),
+              });
+              if (plan.kind === "arrive") {
+                return {
+                  ...agent,
+                  x: plan.spot.x,
+                  y: plan.spot.y,
+                  targetX: plan.spot.x,
+                  targetY: plan.spot.y,
+                  facing: plan.spot.facing,
+                  state: plan.spot.state,
+                  leisureUid: plan.spot.uid,
+                  path: [],
+                  frame: agent.frame + 1,
+                };
+              }
+              if (plan.kind === "walk") {
+                return {
+                  ...agent,
+                  x: nx,
+                  y: ny,
+                  targetX: plan.spot.approachX,
+                  targetY: plan.spot.approachY,
+                  path: plan.path,
+                  state: "walking" as const,
+                  leisureUid: plan.spot.uid,
+                  frame: agent.frame + 1,
+                };
+              }
+              if (plan.kind === "blocked") {
+                leisureRetryAt = now + LEISURE_RETRY_MS;
+              }
+            }
             // New Idea 9: away state — if idle for > AWAY_THRESHOLD_MS, send to nearest couch.
             const lastSeen = lastSeenByAgentId[agent.id] ?? 0;
             const isAway = lastSeen > 0 && now - lastSeen > AWAY_THRESHOLD_MS;
@@ -2168,6 +2219,7 @@ function useAgentTick(
         state: ns,
         path: npath,
         frame: agent.frame + 1,
+        ...(leisureRetryAt ? { leisureRetryAt, leisureUid: undefined } : {}), // kantorai
       };
     });
 

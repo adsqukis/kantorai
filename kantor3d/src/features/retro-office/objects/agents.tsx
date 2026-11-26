@@ -90,6 +90,8 @@ export const AgentModel = memo(function AgentModel({
   const speechBubbleRef = useRef<THREE.Group>(null);
   const speechBubbleMatRef = useRef<THREE.MeshBasicMaterial>(null);
   const awayBubbleRef = useRef<THREE.Group>(null);
+  const kantorCupRef = useRef<THREE.Group>(null); // kantorai
+  const kantorZzzRef = useRef<THREE.Group>(null); // kantorai
   const bodyMatRef = useRef<THREE.MeshLambertMaterial>(null);
   const pos = useRef(new THREE.Vector3(0, 0, 0));
   const resolvedAppearance = useMemo(
@@ -324,6 +326,38 @@ export const AgentModel = memo(function AgentModel({
                         ? 0.06 - workoutPhase * 0.14
                         : -workoutPhase * 0.18
               : 0;
+    }
+
+    // kantorai: pose santai — tidur, nonton, ngopi.
+    const sleeping = agent.state === "sleeping";
+    groupRef.current.rotation.order = sleeping ? "YXZ" : "XYZ";
+    if (sleeping) {
+      groupRef.current.rotation.x = -Math.PI / 2;
+      groupRef.current.rotation.z = 0;
+      groupRef.current.position.y = 0.44 + Math.sin(agent.frame * 0.03) * 0.006;
+      leftArmRef.current?.rotation.set(0, 0, 0);
+      rightArmRef.current?.rotation.set(0, 0, 0);
+      leftLegRef.current?.rotation.set(0, 0, 0);
+      rightLegRef.current?.rotation.set(0, 0, 0);
+    } else if (agent.state === "watching") {
+      groupRef.current.rotation.x = -0.12;
+      groupRef.current.position.y = 0.1;
+      leftLegRef.current?.rotation.set(-1.35, 0, 0);
+      rightLegRef.current?.rotation.set(-1.35, 0, 0);
+      leftArmRef.current?.rotation.set(0.35, 0, 0);
+      rightArmRef.current?.rotation.set(0.35, 0, 0);
+    } else if (agent.state === "drinking") {
+      const sip = Math.max(0, Math.sin(agent.frame * 0.015 + (agent.phaseOffset ?? 0)));
+      rightArmRef.current?.rotation.set(-0.9 - sip * 0.9, 0, -0.1);
+    }
+    if (kantorCupRef.current) kantorCupRef.current.visible = agent.state === "drinking";
+    if (kantorZzzRef.current) {
+      kantorZzzRef.current.visible = sleeping;
+      if (sleeping) {
+        const rise = (agent.frame * 0.006 + (agent.phaseOffset ?? 0)) % 1;
+        kantorZzzRef.current.position.set(0.05, 0.6 - rise * 0.0, 0.45 + rise * 0.35);
+        kantorZzzRef.current.scale.setScalar(0.7 + rise * 0.5);
+      }
     }
 
     const working =
@@ -805,6 +839,17 @@ export const AgentModel = memo(function AgentModel({
         </>
       ) : null}
       <group ref={rightArmRef} position={[-0.12, 0.28, 0]}>
+        {/* kantorai: cangkir kopi */}
+        <group ref={kantorCupRef} position={[0, -0.21, 0.04]} visible={false}>
+          <mesh>
+            <cylinderGeometry args={[0.032, 0.027, 0.07, 14]} />
+            <meshLambertMaterial color="#f8fafc" />
+          </mesh>
+          <mesh position={[0, 0.036, 0]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.004, 14]} />
+            <meshLambertMaterial color="#5b3a1e" />
+          </mesh>
+        </group>
         <mesh position={[0, -0.08, 0]}>
           <boxGeometry args={[0.06, 0.16, 0.06]} />
           <meshLambertMaterial color={sleeveColor} />
@@ -1139,6 +1184,14 @@ export const AgentModel = memo(function AgentModel({
           ) : null}
         </Billboard>
       ) : null}
+      {/* kantorai: Zzz saat tidur (posisi lokal; badan diputar berbaring) */}
+      <group ref={kantorZzzRef} visible={false}>
+        <Billboard>
+          <Text fontSize={0.12} color="#93c5fd" outlineWidth={0.008} outlineColor="#0b1220" anchorX="center" anchorY="middle">
+            Z z z
+          </Text>
+        </Billboard>
+      </group>
       <group ref={awayBubbleRef} visible={false}>
         <Billboard position={[0, 1.3, 0]}>
           <mesh position={[0, 0, -0.001]}>
