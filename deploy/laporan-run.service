@@ -1,0 +1,13 @@
+[Unit]
+Description=Laporan pagi: jalankan tim agent
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=laporan
+Group=laporan
+WorkingDirectory=/opt/laporan
+EnvironmentFile=/etc/laporan/laporan.env
+ExecStart=/opt/laporan/.venv/bin/laporan run
+TimeoutStartSec=45min

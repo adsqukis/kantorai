@@ -1,0 +1,8 @@
+[Unit]
+Description=Laporan pagi: backup database
+
+[Service]
+Type=oneshot
+User=laporan
+Group=laporan
+ExecStart=/opt/laporan/deploy/backup.sh

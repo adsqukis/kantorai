@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block body %}
+<header>
+  <div>
+    <h1>Laporan Pagi</h1>
+    {% if run %}<div class="muted">{{ run.run_date.strftime('%d-%m-%Y') }} · status {{ run.status }}</div>{% endif %}
+  </div>
+  <form method="post" action="/logout"><button class="linkbtn" type="submit">Keluar</button></form>
+</header>
+
+{% if not run %}
+<section class="card"><h2>Belum ada laporan</h2><p class="muted">Laporan untuk tanggal ini belum ada. Laporan dibuat otomatis tiap hari jam 06.30 WIB.</p></section>
+{% else %}
+<section class="chips" aria-label="Status pelapor">
+  {% for row in rows %}{% set r = row.res %}
+  <span class="chip {{ r.status if r else 'GAGAL' }}">{{ row.nama }}: {{ label[r.status] if r else 'BELUM ADA' }}{% if r and r.status == 'GAGAL' %} · {{ r.error }}{% endif %}{% if r and r.attempts > 1 %} · dicoba {{ r.attempts }}×{% endif %}</span>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Penting hari ini</h2>
+  {% if run.summary %}<ol>{% for p in run.summary.penting %}<li>{{ p }}</li>{% endfor %}</ol>
+  {% else %}<p class="muted">Ringkasan belum tersedia.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Yang perlu dilakukan</h2>
+  {% if run.summary %}<ul>{% for p in run.summary.lakukan %}<li>{{ p }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted">Belum ada.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Analisa konten ↔ penjualan</h2>
+  {% if run.analysis %}
+    {% if run.analysis.temuan %}<ul>{% for t in run.analysis.temuan %}<li><b>{{ t.brand }}</b>: {{ t.teks }}{% if t.bukti %} <span class="muted num">({{ t.bukti|join(', ') }})</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+    <h2 style="margin-top:12px">Saran</h2>
+    <ol>{% for s in run.analysis.saran %}<li><b>{{ s.brand }}</b>: {{ s.teks }}{% if s.dugaan %}<span class="tag">dugaan</span>{% endif %}<div class="muted">{{ s.alasan }}</div></li>{% endfor %}</ol>
+    {% if run.analysis.peringatan %}<h2 style="margin-top:12px">Peringatan</h2><ul>{% for p in run.analysis.peringatan %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  {% else %}<p class="muted">Analisa belum tersedia hari ini.</p>{% endif %}
+</section>
+
+<section class="card">
+  <h2>Laporan per web</h2>
+  {% for row in rows %}{% set r = row.res %}
+  <details>
+    <summary><span>{{ row.nama }} · <span class="muted">{{ row.web }}</span></span><span class="chip {{ r.status if r else 'GAGAL' }}">{{ label[r.status] if r else 'BELUM ADA' }}</span></summary>
+    {% if r and r.report %}
+      <ul style="margin-top:8px">{% for p in r.report.poin_utama %}<li>{{ p.teks }}</li>{% endfor %}</ul>
+      {% if r.report.perhatian %}<p><b>Perhatian</b></p><ul>{% for p in r.report.perhatian %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+      {% if r.report.per_brand %}<p><b>Per brand</b></p><table>{% for b in r.report.per_brand %}
+        <tr><td>{{ b.brand }}</td><td class="num">{% if b.tidak_ada_data %}<span class="muted">tidak ada data</span>{% else %}{% for k, v in b.angka.items() %}{{ k }}: {{ v }}<br>{% endfor %}{% endif %}</td></tr>{% endfor %}</table>{% endif %}
+      {% if r.mismatches %}<p class="err">Angka belum cocok dengan data: {{ r.mismatches|join(', ') }}</p>{% endif %}
+    {% elif r %}<p class="err">{{ r.error }}</p>{% endif %}
+    {% if row.changes %}<p><b>Perubahan vs hari sebelumnya</b></p><table>{% for path, pct in row.changes %}<tr><td>{{ path }}</td><td class="num">{{ '%+.1f'|format(pct) }}%</td></tr>{% endfor %}</table>{% endif %}
+  </details>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if dates %}<nav class="card"><h2>Laporan lain</h2><div class="dates">{% for d in dates %}<a href="/laporan/{{ d.isoformat() }}">{{ d.strftime('%d-%m-%Y') }}</a>{% endfor %}</div></nav>{% endif %}
+{% endblock %}

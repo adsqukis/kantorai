@@ -1,0 +1,9 @@
+[Unit]
+Description=Laporan pagi tiap hari 06.30 WIB
+
+[Timer]
+OnCalendar=*-*-* 06:30:00 Asia/Jakarta
+Persistent=true
+
+[Install]
+WantedBy=timers.target

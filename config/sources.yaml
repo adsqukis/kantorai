@@ -1,0 +1,59 @@
+# Daftar panggilan tool TETAP per sumber. AI tidak memilih tool.
+# Placeholder tanggal (WIB): {kemarin}, {lusa}, {tujuh_hari_lalu}
+# Args disempurnakan setelah `laporan probe` dengan token asli (Task 3).
+servers:
+  qukistudio:
+    url: https://qukistudio.com/mcp
+    token_env: QUKIS_STUDIO_TOKEN
+  cms_tiktok:
+    url: https://cms-tiktok-qks.up.railway.app/mcp
+    token_env: CMS_TIKTOK_TOKEN
+  taqis:
+    url: https://qukis.web.id/mcp
+    token_env: TAQIS_TOKEN
+  smartup:
+    url: https://qks.smartup.id/mcp
+    token_env: SMARTUP_TOKEN
+
+sources:
+  - id: konten
+    nama: Konten
+    web: qukistudio.com
+    calls:
+      - {key: ringkasan_pagi, server: qukistudio, tool: qukis_ringkasan_pagi, args: {batas: 50}}
+      - {key: kpi, server: qukistudio, tool: qukis_kpi}
+      - {key: posting, server: qukistudio, tool: qukis_daftar_posting}
+      - {key: insight, server: qukistudio, tool: qukis_ringkasan_insight}
+
+  - id: tiktok
+    nama: TikTok Shop
+    web: cms-tiktok-qks
+    calls:
+      - {key: overview, server: cms_tiktok, tool: get_overview}
+      - {key: sales, server: cms_tiktok, tool: get_sales_summary}
+      - {key: order_status, server: cms_tiktok, tool: get_order_status_summary}
+      - {key: live, server: cms_tiktok, tool: get_live_sessions}
+      - {key: top_video, server: cms_tiktok, tool: get_content_top_videos}
+      - {key: ads, server: cms_tiktok, tool: get_ads_spend_summary}
+      - {key: affiliate, server: cms_tiktok, tool: get_affiliate_performance}
+
+  - id: taqis
+    nama: Lead & Closing
+    web: qukis.web.id
+    calls:
+      # id operasi diisi dari `laporan probe --server taqis` (taqis_daftar_operasi)
+      - {key: dashboard, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard", query: {fromDate: "{kemarin}", toDate: "{kemarin}"}}}
+      - {key: dashboard_lusa, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard", query: {fromDate: "{lusa}", toDate: "{lusa}"}}}
+    compare:
+      - [dashboard, dashboard_lusa]
+
+  - id: keuangan
+    nama: Keuangan
+    web: qks.smartup.id
+    calls:
+      - {key: dashboard, server: smartup, tool: marketplace_dashboard_summary, args: {date_from: "{kemarin}", date_to: "{kemarin}"}}
+      - {key: dashboard_lusa, server: smartup, tool: marketplace_dashboard_summary, args: {date_from: "{lusa}", date_to: "{lusa}"}}
+      - {key: top_produk, server: smartup, tool: marketplace_top_products, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}"}}
+      - {key: tren, server: smartup, tool: marketplace_revenue_trend, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}"}}
+    compare:
+      - [dashboard, dashboard_lusa]
