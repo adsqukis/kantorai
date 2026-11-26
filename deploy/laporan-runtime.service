@@ -1,0 +1,15 @@
+[Unit]
+Description=Laporan pagi: runtime untuk kantor 3D (127.0.0.1:8081)
+After=network-online.target
+
+[Service]
+User=laporan
+Group=laporan
+WorkingDirectory=/opt/laporan
+EnvironmentFile=/etc/laporan/laporan.env
+ExecStart=/opt/laporan/.venv/bin/laporan runtime --port 8081
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

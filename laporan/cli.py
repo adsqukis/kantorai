@@ -76,6 +76,8 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     sv = sub.add_parser("serve", help="jalankan dashboard web")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8080)
+    rt = sub.add_parser("runtime", help="jalankan runtime untuk kantor 3D (hanya 127.0.0.1)")
+    rt.add_argument("--port", type=int, default=8081)
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = get_settings()
@@ -89,6 +91,10 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     if args.cmd == "serve":
         from .web.app import create_app
         uvicorn_run(create_app(settings), host=args.host, port=args.port)
+        return 0
+    if args.cmd == "runtime":
+        from .runtime import create_runtime_app
+        uvicorn_run(create_runtime_app(settings), host="127.0.0.1", port=args.port)
         return 0
     return 2
 

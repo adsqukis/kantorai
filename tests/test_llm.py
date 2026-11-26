@@ -38,3 +38,12 @@ async def test_invalid_twice_raises():
 def test_prompts_contain_guard_sentences(name):
     p = load_prompt(name)
     assert GUARD_1 in p and GUARD_2 in p
+
+
+async def test_chat_returns_text():
+    f = FakeOpenAI(["Halo bos"])
+    out = await LLM(f, "deepseek-chat").chat("sys", [{"role": "user", "content": "hai"}])
+    assert out == "Halo bos"
+    req = f.requests[0]
+    assert req["messages"][0] == {"role": "system", "content": "sys"}
+    assert req["temperature"] == 0.4 and "response_format" not in req
