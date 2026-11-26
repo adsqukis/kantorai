@@ -1,8 +1,8 @@
 [Unit]
-Description=Laporan pagi tiap hari 06.30 WIB
+Description=Laporan pagi tiap hari 08.00 WIB
 
 [Timer]
-OnCalendar=*-*-* 06:30:00 Asia/Jakarta
+OnCalendar=*-*-* 08:00:00 Asia/Jakarta
 Persistent=true
 
 [Install]

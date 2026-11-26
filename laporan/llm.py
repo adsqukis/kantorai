@@ -47,3 +47,10 @@ class LLM:
                     {"role": "user", "content": f"Jawaban tadi gagal divalidasi: {last_err}\nPerbaiki dan kirim ulang JSON yang valid."},
                 ]
         raise LLMError(f"output DeepSeek tidak valid setelah 2 percobaan: {last_err}")
+
+    async def chat(self, system: str, messages: list[dict]) -> str:
+        resp = await self.client.chat.completions.create(
+            model=self.model, messages=[{"role": "system", "content": system}, *messages],
+            temperature=0.4, max_tokens=1200,
+        )
+        return (resp.choices[0].message.content or "").strip()

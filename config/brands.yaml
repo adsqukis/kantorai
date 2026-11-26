@@ -1,11 +1,21 @@
 # Pemetaan nama brand antar web. Alias per sumber: konten, tiktok, taqis, keuangan.
-# DRAF — dilengkapi setelah `laporan probe` dan dicek pemilik.
+# Diisi dari data asli 26 Nov 2026; cek dan lengkapi bila ada nama lain.
 brands:
-  - nama: Generos Milk
-    alias: {konten: [Generos Milk]}
   - nama: Generos Klasik
-    alias: {konten: [Generos Klasik]}
+    alias:
+      konten: [Generos Klasik]
+      tiktok: [Generos.id, Generos Store ID, Generos Stimulasi Anak, generos_id, generosmultivitamin]
+      keuangan: [Generos]
+  - nama: Generos Milk
+    alias:
+      konten: [Generos Milk]
+      tiktok: [generosmilk.store, inibundaasri]
+      keuangan: [Generos Milk]
   - nama: Expedelly
-    alias: {konten: [Expedelly]}
+    alias:
+      konten: [Expedelly]
+      tiktok: [expedelly_bemomio]
   - nama: Visikids
-    alias: {konten: [Visikids]}
+    alias:
+      konten: [Visikids]
+      tiktok: [visikids.official]

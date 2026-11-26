@@ -24,7 +24,7 @@ async def test_ok_path():
     raw, res = await run_reporter(FakeClient(responses=DATA), llm, SPEC, BRANDS, D)
     assert res.status == "OK" and res.mismatches == [] and res.source_id == "tiktok"
     payload = json.loads(llm.calls[0]["user"])
-    assert payload["web"] == "cms-tiktok-qks" and payload["tanggal"] == "2026-11-26"
+    assert payload["web"] == "cms-tiktok-qks" and payload["tanggal_laporan"] == "2026-11-26"
     assert {"nama": "Generos Milk", "alias": ["GENEROS MILK OFFICIAL"]} in payload["brand"]
     assert "Semua angka harus dikutip persis" in llm.calls[0]["system"]
 
@@ -74,3 +74,10 @@ async def test_long_items_truncated():
     llm = FakeLLM([Report(poin_utama=[Poin(teks="ok")])])
     await run_reporter(FakeClient(responses=big), llm, SPEC, BRANDS, D)
     assert len(llm.calls[0]["user"]) < 60000 and "…dipotong" in llm.calls[0]["user"]
+
+
+async def test_payload_says_which_day_the_data_is_from():
+    llm = FakeLLM([good_report()])
+    await run_reporter(FakeClient(responses=DATA), llm, SPEC, BRANDS, D)
+    payload = json.loads(llm.calls[0]["user"])
+    assert payload["tanggal_data"] == "2026-11-25" and payload["tanggal_laporan"] == "2026-11-26"

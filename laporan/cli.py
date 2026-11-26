@@ -73,9 +73,16 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     pr.add_argument("--try", dest="try_source", metavar="SOURCE_ID")
     rn = sub.add_parser("run", help="jalankan laporan pagi")
     rn.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
+    rn.add_argument("--rekaman", help="file JSON hasil panggilan yang sudah direkam (uji coba tanpa token)")
+    rc = sub.add_parser("rencana", help="cetak daftar panggilan MCP untuk satu tanggal (JSON)")
+    rc.add_argument("--date", help="YYYY-MM-DD (WIB); bawaan hari ini")
     sv = sub.add_parser("serve", help="jalankan dashboard web")
     sv.add_argument("--host", default="127.0.0.1")
     sv.add_argument("--port", type=int, default=8080)
+    rt = sub.add_parser("runtime", help="jalankan runtime untuk kantor 3D (hanya 127.0.0.1)")
+    rt.add_argument("--port", type=int, default=8081)
+    dm = sub.add_parser("demo", help="isi data CONTOH untuk mencoba dashboard dan kantor 3D")
+    dm.add_argument("--berjalan", action="store_true", help="laporan sedang berjalan (agent terlihat kerja)")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = get_settings()
@@ -85,10 +92,28 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
         return asyncio.run(_probe(settings, args.server, transport))
     if args.cmd == "run":
         run_date = date.fromisoformat(args.date) if args.date else today_wib()
+        if args.rekaman:
+            from .snapshot import SnapshotTransport
+            transport = SnapshotTransport(args.rekaman, load_servers(settings))
         return asyncio.run(_run(settings, run_date, transport, llm))
     if args.cmd == "serve":
         from .web.app import create_app
         uvicorn_run(create_app(settings), host=args.host, port=args.port)
+        return 0
+    if args.cmd == "rencana":
+        from .snapshot import planned_calls
+        run_date = date.fromisoformat(args.date) if args.date else today_wib()
+        print(json.dumps(planned_calls(load_sources(settings), load_servers(settings), run_date), ensure_ascii=False, indent=1))
+        return 0
+    if args.cmd == "demo":
+        from .demo import seed_demo
+        seed_demo(settings.db_path, today_wib(), berjalan=args.berjalan)
+        print(f"Data contoh untuk {today_wib()} sudah diisi ke {settings.db_path}"
+              + (" (laporan sedang berjalan)." if args.berjalan else "."))
+        return 0
+    if args.cmd == "runtime":
+        from .runtime import create_runtime_app
+        uvicorn_run(create_runtime_app(settings), host="127.0.0.1", port=args.port)
         return 0
     return 2
 

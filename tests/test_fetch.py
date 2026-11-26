@@ -49,3 +49,15 @@ async def test_compare_pairs_filled():
         compare=[("d", "d_lusa")])
     raw = await fetch_source(c, spec, D)
     assert raw.comparisons == {"d": {"net": 10.0}}
+
+
+def test_comparisons_match_list_rows_by_name_not_position():
+    a = {"brands": [{"name": "Generos", "net": 110}, {"name": "Generos Milk", "net": 50}]}
+    b = {"brands": [{"name": "Generos Milk", "net": 100}, {"name": "Generos", "net": 100}]}
+    assert compute_comparisons(a, b) == {"brands.Generos.net": 10.0, "brands.Generos Milk.net": -50.0}
+
+
+def test_comparisons_use_cs_and_platform_names_too():
+    a = {"perCs": [{"csName": "Salsa", "purchase": 9}], "p": [{"platform": "TIKTOK", "views": 20}]}
+    b = {"perCs": [{"csName": "Salsa", "purchase": 3}], "p": [{"platform": "TIKTOK", "views": 10}]}
+    assert compute_comparisons(a, b) == {"perCs.Salsa.purchase": 200.0, "p.TIKTOK.views": 100.0}

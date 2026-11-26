@@ -94,3 +94,11 @@ def test_api_state_while_running(setup):
     s = {a["id"]: a["status"] for a in c.get("/api/state").json()["agents"]}
     assert s == {"koordinator": "kerja", "konten": "selesai", "tiktok": "gagal", "taqis": "kerja",
                  "keuangan": "kerja", "analis": "santai"}
+
+
+def test_local_http_login_works_when_cookie_secure_off(settings_fixture):
+    settings_fixture.cookie_secure = False
+    c = TestClient(create_app(settings_fixture), base_url="http://localhost")
+    r = c.post("/login", data={"password": "rahasia"}, follow_redirects=False)
+    assert "secure" not in r.headers["set-cookie"].lower()
+    assert c.get("/api/state").status_code == 200

@@ -1,6 +1,6 @@
 # Daftar panggilan tool TETAP per sumber. AI tidak memilih tool.
 # Placeholder tanggal (WIB): {kemarin}, {lusa}, {tujuh_hari_lalu}
-# Args disempurnakan setelah `laporan probe` dengan token asli (Task 3).
+# Diverifikasi 26 Nov 2026 terhadap keempat server asli (lewat connector).
 servers:
   qukistudio:
     url: https://qukistudio.com/mcp
@@ -21,31 +21,39 @@ sources:
     web: qukistudio.com
     calls:
       - {key: ringkasan_pagi, server: qukistudio, tool: qukis_ringkasan_pagi, args: {batas: 50}}
-      - {key: kpi, server: qukistudio, tool: qukis_kpi}
-      - {key: posting, server: qukistudio, tool: qukis_daftar_posting}
-      - {key: insight, server: qukistudio, tool: qukis_ringkasan_insight}
+      - {key: posting_tayang, server: qukistudio, tool: qukis_daftar_posting, args: {status: tayang, dari: "{kemarin}", sampai: "{kemarin}"}}
+      - {key: posting_gagal, server: qukistudio, tool: qukis_daftar_posting, args: {status: gagal, dari: "{kemarin}", sampai: "{kemarin}"}}
+      - {key: insight_generos_milk, server: qukistudio, tool: qukis_ringkasan_insight, args: {brand: Generos Milk, periode: 7 hari}}
+      - {key: insight_generos_klasik, server: qukistudio, tool: qukis_ringkasan_insight, args: {brand: Generos Klasik, periode: 7 hari}}
+      - {key: insight_expedelly, server: qukistudio, tool: qukis_ringkasan_insight, args: {brand: Expedelly, periode: 7 hari}}
+      - {key: insight_visikids, server: qukistudio, tool: qukis_ringkasan_insight, args: {brand: Visikids, periode: 7 hari}}
 
   - id: tiktok
     nama: TikTok Shop
     web: cms-tiktok-qks
     calls:
-      - {key: overview, server: cms_tiktok, tool: get_overview}
-      - {key: sales, server: cms_tiktok, tool: get_sales_summary}
-      - {key: order_status, server: cms_tiktok, tool: get_order_status_summary}
-      - {key: live, server: cms_tiktok, tool: get_live_sessions}
-      - {key: top_video, server: cms_tiktok, tool: get_content_top_videos}
-      - {key: ads, server: cms_tiktok, tool: get_ads_spend_summary}
-      - {key: affiliate, server: cms_tiktok, tool: get_affiliate_performance}
+      - {key: sales, server: cms_tiktok, tool: get_sales_summary, args: {from: "{kemarin}", to: "{kemarin}"}}
+      - {key: sales_lusa, server: cms_tiktok, tool: get_sales_summary, args: {from: "{lusa}", to: "{lusa}"}}
+      - {key: order_status, server: cms_tiktok, tool: get_order_status_summary, args: {from: "{kemarin}", to: "{kemarin}"}}
+      - {key: live, server: cms_tiktok, tool: get_live_sessions, args: {date: "{kemarin}"}}
+      - {key: live_lusa, server: cms_tiktok, tool: get_live_sessions, args: {date: "{lusa}"}}
+      - {key: ads, server: cms_tiktok, tool: get_ads_spend_summary, args: {from: "{kemarin}", to: "{kemarin}"}}
+      - {key: top_video_7hari, server: cms_tiktok, tool: get_content_top_videos, args: {from: "{tujuh_hari_lalu}", to: "{kemarin}", limit: "10"}}
+      - {key: overview_30hari, server: cms_tiktok, tool: get_overview}
+      - {key: affiliate, server: cms_tiktok, tool: get_affiliate_performance, args: {date: "{kemarin}", limit: "10"}}
+    compare:
+      - [sales, sales_lusa]
+      - [live, live_lusa]
 
   - id: taqis
     nama: Lead & Closing
     web: qukis.web.id
     calls:
-      # id operasi diisi dari `laporan probe --server taqis` (taqis_daftar_operasi)
-      - {key: dashboard, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard", query: {fromDate: "{kemarin}", toDate: "{kemarin}"}}}
-      - {key: dashboard_lusa, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard", query: {fromDate: "{lusa}", toDate: "{lusa}"}}}
+      - {key: iklan, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard/overview", query: {from: "{kemarin}", to: "{kemarin}"}}}
+      - {key: iklan_lusa, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard/overview", query: {from: "{lusa}", to: "{lusa}"}}}
+      - {key: closing, server: taqis, tool: taqis_baca, args: {operasi: "GET /api/dashboard/closing/summary", query: {from: "{kemarin}", to: "{kemarin}"}}}
     compare:
-      - [dashboard, dashboard_lusa]
+      - [iklan, iklan_lusa]
 
   - id: keuangan
     nama: Keuangan
@@ -53,7 +61,7 @@ sources:
     calls:
       - {key: dashboard, server: smartup, tool: marketplace_dashboard_summary, args: {date_from: "{kemarin}", date_to: "{kemarin}"}}
       - {key: dashboard_lusa, server: smartup, tool: marketplace_dashboard_summary, args: {date_from: "{lusa}", date_to: "{lusa}"}}
-      - {key: top_produk, server: smartup, tool: marketplace_top_products, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}"}}
-      - {key: tren, server: smartup, tool: marketplace_revenue_trend, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}"}}
+      - {key: top_produk_7hari, server: smartup, tool: marketplace_top_products, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}", limit: 10}}
+      - {key: tren_net_revenue, server: smartup, tool: marketplace_revenue_trend, args: {date_from: "{tujuh_hari_lalu}", date_to: "{kemarin}", metric: net_revenue}}
     compare:
       - [dashboard, dashboard_lusa]

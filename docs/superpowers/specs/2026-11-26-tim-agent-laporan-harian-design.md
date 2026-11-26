@@ -143,7 +143,7 @@ Database ──► Dashboard web (satu URL, satu password)
 ```
 
 ### 6.2 Koordinator
-- Dijalankan cron tiap hari jam **06.30 WIB** *(call builder; bisa diubah
+- Dijalankan cron tiap hari jam **08.00 WIB** (diubah pemilik 26 Nov; semula 06.30) *(call builder; bisa diubah
   pemilik)*. Harus setelah Qukis Studio menerbitkan "ringkasan pagi"
   (terlihat dibuat sekitar 05.00 WIB).
 - Menjalankan 4 pelapor paralel; tiap pelapor punya batas waktu dan

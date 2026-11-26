@@ -51,3 +51,9 @@ def test_numbers_in_text_are_found():
 def test_report_numbers_includes_numbers_written_in_poin_text():
     r = Report(poin_utama=[Poin(teks="Omset Rp999 jt hari ini", angka=[])])
     assert verify_numbers(report_numbers(r), RAW) == ["Rp999 jt"]
+
+
+def test_dates_in_text_are_not_numbers():
+    from laporan.numbers import angka_in_text
+    assert angka_in_text("Omset tanggal 25 November Rp36,1 jt, 22 sesi live") == ["Rp36,1 jt", "22"]
+    assert angka_in_text("data 24 Nov dan 1 Desember") == []
