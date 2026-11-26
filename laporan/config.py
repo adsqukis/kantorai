@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     dashboard_password: str = ""
     session_secret: str = ""
     config_dir: str = "config"
+    cookie_secure: bool = True  # false hanya untuk coba di http://localhost
 
 
 def _yaml(settings: Settings, name: str) -> dict:

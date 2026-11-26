@@ -78,6 +78,8 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     sv.add_argument("--port", type=int, default=8080)
     rt = sub.add_parser("runtime", help="jalankan runtime untuk kantor 3D (hanya 127.0.0.1)")
     rt.add_argument("--port", type=int, default=8081)
+    dm = sub.add_parser("demo", help="isi data CONTOH untuk mencoba dashboard dan kantor 3D")
+    dm.add_argument("--berjalan", action="store_true", help="laporan sedang berjalan (agent terlihat kerja)")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     settings = get_settings()
@@ -91,6 +93,12 @@ def main(argv: list[str] | None = None, *, transport=None, llm=None) -> int:
     if args.cmd == "serve":
         from .web.app import create_app
         uvicorn_run(create_app(settings), host=args.host, port=args.port)
+        return 0
+    if args.cmd == "demo":
+        from .demo import seed_demo
+        seed_demo(settings.db_path, today_wib(), berjalan=args.berjalan)
+        print(f"Data contoh untuk {today_wib()} sudah diisi ke {settings.db_path}"
+              + (" (laporan sedang berjalan)." if args.berjalan else "."))
         return 0
     if args.cmd == "runtime":
         from .runtime import create_runtime_app

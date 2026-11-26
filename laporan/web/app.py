@@ -39,7 +39,7 @@ def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="Laporan Pagi", docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(
         SessionMiddleware, secret_key=settings.session_secret or secrets.token_hex(32),
-        max_age=30 * 24 * 3600, same_site="lax", https_only=True,
+        max_age=30 * 24 * 3600, same_site="lax", https_only=settings.cookie_secure,
     )
     templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
     conn = db.connect(settings.db_path)

@@ -1,0 +1,23 @@
+[Unit]
+Description=Kantor 3D (fork Claw3D) untuk tim agent laporan pagi
+After=network-online.target laporan-runtime.service
+
+[Service]
+User=laporan
+Group=laporan
+WorkingDirectory=/opt/laporan/kantor3d
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8712
+Environment=CLAW3D_GATEWAY_URL=http://127.0.0.1:8711
+Environment=CLAW3D_GATEWAY_ADAPTER_TYPE=custom
+Environment=CUSTOM_RUNTIME_ALLOWLIST=127.0.0.1,localhost
+Environment=OPENCLAW_STATE_DIR=/var/lib/laporan/kantor3d-state
+# STUDIO_ACCESS_TOKEN wajib karena kantor 3D dibuka dari internet.
+EnvironmentFile=/etc/laporan/kantor3d.env
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

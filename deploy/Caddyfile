@@ -1,5 +1,11 @@
-# HTTPS otomatis untuk dashboard. Set LAPORAN_DOMAIN di /etc/default/caddy atau environment Caddy.
+# Pakai file ini HANYA bila VPS belum punya web server lain di port 80/443.
+# Set LAPORAN_DOMAIN dan KANTOR_DOMAIN di /etc/default/caddy.
 {$LAPORAN_DOMAIN} {
 	encode gzip
-	reverse_proxy 127.0.0.1:8080
+	reverse_proxy 127.0.0.1:8710
+}
+
+{$KANTOR_DOMAIN} {
+	encode gzip
+	reverse_proxy 127.0.0.1:8712
 }

@@ -11,12 +11,14 @@ laporan/cli.py
 laporan/config.py
 laporan/coordinator.py
 laporan/db.py
+laporan/demo.py
 laporan/fetch.py
 laporan/llm.py
 laporan/mcp_client.py
 laporan/models.py
 laporan/numbers.py
 laporan/reporter.py
+laporan/runtime.py
 laporan/timeutil.py
 laporan/prompts/__init__.py
 laporan/prompts/analyst.md
@@ -32,10 +34,12 @@ tests/test_cli_probe.py
 tests/test_config.py
 tests/test_coordinator.py
 tests/test_db.py
+tests/test_demo.py
 tests/test_fetch.py
 tests/test_llm.py
 tests/test_mcp_client.py
 tests/test_numbers.py
 tests/test_reporter.py
+tests/test_runtime.py
 tests/test_timeutil.py
 tests/test_web.py
