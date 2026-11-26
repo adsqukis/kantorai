@@ -1,0 +1,5 @@
+# HTTPS otomatis untuk dashboard. Set LAPORAN_DOMAIN di /etc/default/caddy atau environment Caddy.
+{$LAPORAN_DOMAIN} {
+	encode gzip
+	reverse_proxy 127.0.0.1:8080
+}

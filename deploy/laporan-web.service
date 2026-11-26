@@ -1,0 +1,15 @@
+[Unit]
+Description=Laporan pagi: dashboard web
+After=network-online.target
+
+[Service]
+User=laporan
+Group=laporan
+WorkingDirectory=/opt/laporan
+EnvironmentFile=/etc/laporan/laporan.env
+ExecStart=/opt/laporan/.venv/bin/laporan serve --host 127.0.0.1 --port 8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

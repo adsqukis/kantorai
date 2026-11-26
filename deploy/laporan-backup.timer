@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup database laporan tiap hari 07.00 WIB
+
+[Timer]
+OnCalendar=*-*-* 07:00:00 Asia/Jakarta
+Persistent=true
+
+[Install]
+WantedBy=timers.target
